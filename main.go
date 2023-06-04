@@ -60,8 +60,8 @@ func NewPlayer(name string, position_x, position_y float32) Player {
 	player.Points = 0
 	player.AvailableBombs = 1
 	player.Status = true
-	player.HitBox = rl.NewRectangle(float32(position_x), float32(position_y), 10, 10)
-	player.Speed = 30
+	player.HitBox = rl.NewRectangle(float32(position_x), float32(position_y), 30, 30)
+	player.Speed = 50
 	return player
 }
 
@@ -109,7 +109,7 @@ type Game struct {
 func NewGame() Game {
 	game := Game{}
 	game.Ticks = 0
-	game.GameBoard = NewBoard(20, 10)
+	game.GameBoard = NewBoard(12, 12)
 	return game
 }
 func (game *Game) AddPlayer(name string, position_x, position_y float32) {
@@ -197,17 +197,19 @@ func (game *Game) Update() {
 }
 
 type Gfx struct {
-	Size_x       int32
-	Size_y       int32
-	Tile_size    int32
-	Game_Texture rl.RenderTexture2D
+	Size_x              int32
+	Size_y              int32
+	Tile_size           int32
+	Game_Texture        rl.RenderTexture2D
+	Game_Texture_Size_x int32
+	Game_Texture_Size_y int32
 }
 
 func NewGfx(size_x, size_y int32) Gfx {
 	gfx := Gfx{}
 	gfx.Size_x = size_x
 	gfx.Size_y = size_y
-	gfx.Tile_size = 20
+	gfx.Tile_size = 30
 	rl.InitWindow(size_x, size_y, "TuxMan")
 	//defer rl.CloseWindow()
 	rl.SetTargetFPS(30)
@@ -269,15 +271,20 @@ func (gfx *Gfx) GetPlayer1Key() (string, bool) {
 }
 
 func (gfx *Gfx) InitGameTextureBox(game *Game) {
-	gfx.Game_Texture = rl.LoadRenderTexture(gfx.Tile_size*game.GameBoard.Size_x, gfx.Tile_size*game.GameBoard.Size_y) // rl.LoadRenderTexture(int32(float32(size_x)*0.8), int32(float32(size_y)*0.8))
+	gfx.Game_Texture_Size_x = gfx.Tile_size * game.GameBoard.Size_x
+	gfx.Game_Texture_Size_y = gfx.Tile_size * game.GameBoard.Size_y
+	gfx.Game_Texture = rl.LoadRenderTexture(gfx.Game_Texture_Size_x, gfx.Game_Texture_Size_y) // rl.LoadRenderTexture(int32(float32(size_x)*0.8), int32(float32(size_y)*0.8))
 	rl.SetTextureFilter(gfx.Game_Texture.Texture, rl.TextureFilterMode(rl.RL_TEXTURE_FILTER_BILINEAR))
+}
 
+func (gfx *Gfx) TextCenterX(text string, fontSize int32) int32 {
+	return (gfx.Size_x - rl.MeasureText(text, fontSize)) / 2
 }
 
 func main() {
 
 	game := NewGame()
-	gfx := NewGfx(800, 400)
+	gfx := NewGfx(600, 600)
 	gfx.InitGameTextureBox(&game)
 	game.AddPlayer("aaa", 0, 1)
 	for !rl.WindowShouldClose() {
@@ -285,7 +292,8 @@ func main() {
 		gfx.GenerateGameTexture(&game)
 		rl.BeginDrawing()
 		rl.ClearBackground(rl.RayWhite)
-		rl.DrawTexture(gfx.Game_Texture.Texture, 10, 10, rl.White)
+		rl.DrawText("TuxMan", gfx.TextCenterX("TuxMan", 40), 10, 40, rl.Black)
+		rl.DrawTexture(gfx.Game_Texture.Texture, (gfx.Size_x-gfx.Game_Texture_Size_x)/2, 60, rl.White)
 		rl.EndDrawing()
 	}
 }
