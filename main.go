@@ -49,6 +49,7 @@ type Player struct {
 	AvailableBombs int32
 	Status         bool
 	HitBox         rl.Rectangle
+	Speed          float32
 }
 
 func NewPlayer(name string, position_x, position_y float32) Player {
@@ -60,6 +61,7 @@ func NewPlayer(name string, position_x, position_y float32) Player {
 	player.AvailableBombs = 1
 	player.Status = true
 	player.HitBox = rl.NewRectangle(float32(position_x), float32(position_y), 10, 10)
+	player.Speed = 20
 	return player
 }
 
@@ -115,25 +117,25 @@ func (game *Game) AddPlayer(name string, position_x, position_y float32) {
 	game.Players = append(game.Players, player)
 }
 
-func (game *Game) GetNextPosition(player *Player, direction string) rl.Vector2 {
+func (game *Game) GetNextPosition(player *Player, direction string, deltatime float32) rl.Vector2 {
 	var nextPosition rl.Vector2
 	nextPosition = player.Position
 	switch direction {
 	case "up":
-		nextPosition.Y += 1
+		nextPosition.Y -= player.Speed * deltatime
 	case "down":
-		nextPosition.Y -= 1
+		nextPosition.Y += player.Speed * deltatime
 	case "left":
-		nextPosition.X -= 1
+		nextPosition.X -= player.Speed * deltatime
 	case "right":
-		nextPosition.X += 1
+		nextPosition.X += player.Speed * deltatime
 	}
 	return nextPosition
 }
 
-func (game *Game) GetNextPositionHitbox(player *Player, direction string) rl.Rectangle {
+func (game *Game) GetNextPositionHitbox(player *Player, direction string, deltatime float32) rl.Rectangle {
 	nextHitbox := player.HitBox
-	nextPosition := game.GetNextPosition(player, direction)
+	nextPosition := game.GetNextPosition(player, direction, deltatime)
 	nextHitbox.Y = nextPosition.Y
 	nextHitbox.X = nextPosition.X
 	return nextHitbox
@@ -177,9 +179,9 @@ func (game *Game) HitboxCollidesWithOtherPlayer(sourcePlayer *Player, hitbox rl.
 		}
 	}
 */
-func (game *Game) MovePlayer(player *Player, direction string) {
-	nextPosition := game.GetNextPosition(player, direction)
-	nextHitbox := game.GetNextPositionHitbox(player, direction)
+func (game *Game) MovePlayer(player *Player, direction string, deltatime float32) {
+	nextPosition := game.GetNextPosition(player, direction, deltatime)
+	nextHitbox := game.GetNextPositionHitbox(player, direction, deltatime)
 	if game.PositionIsValid(nextPosition) && !game.HitboxCollidesWithOtherPlayer(player, nextHitbox) {
 		fmt.Println("Updating position ", nextPosition)
 		player.UpdatePosition(nextPosition)
@@ -227,7 +229,7 @@ func (gfx *Gfx) DrawPlayers(game *Game) {
 	}
 }
 
-func (gfx *Gfx) HandleInput(game *Game) {
+func (gfx *Gfx) HandleInput(game *Game, deltatime float32) {
 	var playerAlreadyChecked [4]bool
 	playerAlreadyChecked = [4]bool{false, false, false, false}
 
@@ -235,7 +237,7 @@ func (gfx *Gfx) HandleInput(game *Game) {
 
 	if player1KeyIsPressed && !playerAlreadyChecked[0] {
 		playerAlreadyChecked[0] = true
-		game.MovePlayer(&game.Players[0], player1Key)
+		game.MovePlayer(&game.Players[0], player1Key, deltatime)
 		fmt.Println("Key pressed: ", player1Key)
 	}
 }
@@ -261,7 +263,7 @@ func main() {
 	gfx := NewGfx(800, 400)
 	game.AddPlayer("aaa", 0, 1)
 	for !rl.WindowShouldClose() {
-		gfx.HandleInput(&game)
+		gfx.HandleInput(&game, rl.GetFrameTime())
 		rl.BeginDrawing()
 
 		rl.ClearBackground(rl.RayWhite)
