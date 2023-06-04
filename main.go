@@ -1,8 +1,11 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+	//	"log"
 
-import rl "github.com/gen2brain/raylib-go/raylib"
+	rl "github.com/gen2brain/raylib-go/raylib"
+)
 
 type Board struct {
 	Size_x       int32
@@ -56,11 +59,17 @@ func NewPlayer(name string, position_x, position_y float32) Player {
 	player.Points = 0
 	player.AvailableBombs = 1
 	player.Status = true
-	player.HitBox = rl.NewRectangle(float32(position_x), float32(position_y), 1, 1)
+	player.HitBox = rl.NewRectangle(float32(position_x), float32(position_y), 10, 10)
 	return player
 }
 
-func (player *Player) UpdatePosition(position_x, position_y float32) {
+func (player *Player) UpdatePosition(position rl.Vector2) {
+	player.Position = position
+	player.HitBox.X = position.X
+	player.HitBox.Y = position.Y
+}
+
+func (player *Player) UpdatePositionFloat32(position_x, position_y float32) {
 	player.Position.X = position_x
 	player.Position.Y = position_y
 	player.HitBox.X = position_x
@@ -121,46 +130,62 @@ func (game *Game) GetNextPosition(player *Player, direction string) rl.Vector2 {
 	}
 	return nextPosition
 }
-func (game *Game) PositionIsValid(position [2]int32) bool {
-	if position[0] <= game.GameBoard.Size_x && position[1] <= game.GameBoard.Size_y && position[0] >= 0 && position[1] >= 0 {
+
+func (game *Game) GetNextPositionHitbox(player *Player, direction string) rl.Rectangle {
+	nextHitbox := player.HitBox
+	nextPosition := game.GetNextPosition(player, direction)
+	nextHitbox.Y = nextPosition.Y
+	nextHitbox.X = nextPosition.X
+	return nextHitbox
+}
+
+func (game *Game) PositionIsValid(position rl.Vector2) bool {
+	if position.X <= float32(game.GameBoard.Size_x)*20 && position.Y <= float32(game.GameBoard.Size_y)*20 && position.X >= 0 && position.Y >= 0 {
 		return true
 	} else {
 		return false
 	}
 }
 
-func (game *Game) PositionCollidesWithBomb(position [2]int32) bool {
-	for _, bomb := range game.Bombs {
-		if bomb.Position_x == position[0] && bomb.Position_y == position[1] {
-			return true
+/*
+	func (game *Game) PositionCollidesWithBomb(position [2]int32) bool {
+		for _, bomb := range game.Bombs {
+			if bomb.Position_x == position[0] && bomb.Position_y == position[1] {
+				return true
+			}
 		}
-	}
-	return false
-}
-func (game *Game) PositionCollidesWithPlayer(position [2]int32) bool {
-	for _, player := range game.Players {
-		if player.Position_x == position[0] && player.Position_y == position[1] {
-			return true
-		}
-	}
-	return false
-}
-
-func (game *Game) PositionCollidesWithObstacle(position [2]int32) bool {
-	//WARNING: PositionIsValid MUST be run first
-	fmt.Printf("position[0]: %v, position[1]: %v\n", position[0], position[1])
-	if game.GameBoard.board_matrix[position[0]][position[1]] > 100 {
-		return true
-	} else {
 		return false
 	}
+*/
+func (game *Game) HitboxCollidesWithOtherPlayer(sourcePlayer *Player, hitbox rl.Rectangle) bool {
+	for i := range game.Players {
+		if game.Players[i] != *sourcePlayer && rl.CheckCollisionRecs(hitbox, game.Players[i].HitBox) {
+			return true
+		}
+	}
+	return false
 }
 
+/*
+	func (game *Game) PositionCollidesWithObstacle(position [2]int32) bool {
+		//WARNING: PositionIsValid MUST be run first
+		fmt.Printf("position[0]: %v, position[1]: %v\n", position[0], position[1])
+		if game.GameBoard.board_matrix[position[0]][position[1]] > 100 {
+			return true
+		} else {
+			return false
+		}
+	}
+*/
 func (game *Game) MovePlayer(player *Player, direction string) {
 	nextPosition := game.GetNextPosition(player, direction)
-	if game.PositionIsValid(nextPosition) && !game.PositionCollidesWithBomb(nextPosition) && !game.PositionCollidesWithPlayer(nextPosition) && !game.PositionCollidesWithObstacle(nextPosition) {
-		player.Position.Y = nextPosition[0]
-		player.Position.X = nextPosition[1]
+	nextHitbox := game.GetNextPositionHitbox(player, direction)
+	if game.PositionIsValid(nextPosition) && !game.HitboxCollidesWithOtherPlayer(player, nextHitbox) {
+		fmt.Println("Updating position ", nextPosition)
+		player.UpdatePosition(nextPosition)
+		fmt.Println("New Player position: ", player.Position)
+		fmt.Println("New Player hitbox: ", player.HitBox)
+
 	}
 }
 
@@ -197,18 +222,21 @@ func (gfx *Gfx) DrawBoard(game *Game) {
 
 func (gfx *Gfx) DrawPlayers(game *Game) {
 	for _, v := range game.Players {
-		rl.DrawRectangle(int32(v.Position.X)*gfx.Tile_size, int32(v.Position.Y)*gfx.Tile_size, gfx.Tile_size, gfx.Tile_size, rl.Red)
+		rl.DrawRectangleRec(v.HitBox, rl.Beige)
+		//rl.DrawRectangle(int32(v.Position.X)*gfx.Tile_size, int32(v.Position.Y)*gfx.Tile_size, gfx.Tile_size, gfx.Tile_size, rl.Red)
 	}
 }
 
 func (gfx *Gfx) HandleInput(game *Game) {
 	var playerAlreadyChecked [4]bool
+	playerAlreadyChecked = [4]bool{false, false, false, false}
 
 	player1Key, player1KeyIsPressed := gfx.GetPlayer1Key()
 
 	if player1KeyIsPressed && !playerAlreadyChecked[0] {
 		playerAlreadyChecked[0] = true
 		game.MovePlayer(&game.Players[0], player1Key)
+		fmt.Println("Key pressed: ", player1Key)
 	}
 }
 
