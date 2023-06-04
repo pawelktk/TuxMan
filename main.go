@@ -108,16 +108,16 @@ func (game *Game) GetNextPosition(player *Player, direction string) [2]int32 {
 	var moveVector [2]int32
 	switch direction {
 	case "up":
-		moveVector[1] = 1
-	case "down":
-		moveVector[1] = -1
-	case "left":
-		moveVector[0] = -1
-	case "right":
 		moveVector[0] = 1
+	case "down":
+		moveVector[0] = -1
+	case "left":
+		moveVector[1] = -1
+	case "right":
+		moveVector[1] = 1
 	}
-	moveVector[0] += player.Position_x
-	moveVector[1] += player.Position_y
+	moveVector[1] += player.Position_x
+	moveVector[0] += player.Position_y
 	return moveVector
 }
 func (game *Game) PositionIsValid(position [2]int32) bool {
@@ -147,6 +147,7 @@ func (game *Game) PositionCollidesWithPlayer(position [2]int32) bool {
 
 func (game *Game) PositionCollidesWithObstacle(position [2]int32) bool {
 	//WARNING: PositionIsValid MUST be run first
+	fmt.Printf("position[0]: %v, position[1]: %v\n", position[0], position[1])
 	if game.GameBoard.board_matrix[position[0]][position[1]] > 100 {
 		return true
 	} else {
@@ -157,8 +158,8 @@ func (game *Game) PositionCollidesWithObstacle(position [2]int32) bool {
 func (game *Game) MovePlayer(player *Player, direction string) {
 	nextPosition := game.GetNextPosition(player, direction)
 	if game.PositionIsValid(nextPosition) && !game.PositionCollidesWithBomb(nextPosition) && !game.PositionCollidesWithPlayer(nextPosition) && !game.PositionCollidesWithObstacle(nextPosition) {
-		player.Position_x = nextPosition[0]
-		player.Position_y = nextPosition[1]
+		player.Position_y = nextPosition[0]
+		player.Position_x = nextPosition[1]
 	}
 }
 
@@ -197,14 +198,41 @@ func (gfx *Gfx) DrawPlayers(game *Game) {
 	for _, v := range game.Players {
 		rl.DrawRectangle(int32(v.Position_x)*gfx.Tile_size, int32(v.Position_y)*gfx.Tile_size, gfx.Tile_size, gfx.Tile_size, rl.Red)
 	}
+}
 
+func (gfx *Gfx) HandleInput(game *Game) {
+	var playerAlreadyChecked [4]bool
+
+	player1Key, player1KeyIsPressed := gfx.GetPlayer1Key()
+
+	if player1KeyIsPressed && !playerAlreadyChecked[0] {
+		playerAlreadyChecked[0] = true
+		game.MovePlayer(&game.Players[0], player1Key)
+	}
+}
+
+func (gfx *Gfx) GetPlayer1Key() (string, bool) {
+	switch {
+	case rl.IsKeyDown(rl.KeyLeft):
+		return "left", true
+	case rl.IsKeyDown(rl.KeyRight):
+		return "right", true
+	case rl.IsKeyDown(rl.KeyUp):
+		return "up", true
+	case rl.IsKeyDown(rl.KeyDown):
+		return "down", true
+	default:
+		return "", false
+	}
 }
 
 func main() {
+
 	game := NewGame()
-	gfx := NewGfx(800, 800)
+	gfx := NewGfx(800, 400)
 	game.AddPlayer("aaa", 0, 1)
 	for !rl.WindowShouldClose() {
+		gfx.HandleInput(&game)
 		rl.BeginDrawing()
 
 		rl.ClearBackground(rl.RayWhite)
