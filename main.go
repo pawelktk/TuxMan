@@ -61,7 +61,7 @@ func NewPlayer(name string, position_x, position_y float32) Player {
 	player.AvailableBombs = 1
 	player.Status = true
 	player.HitBox = rl.NewRectangle(float32(position_x), float32(position_y), 10, 10)
-	player.Speed = 20
+	player.Speed = 30
 	return player
 }
 
@@ -122,9 +122,9 @@ func (game *Game) GetNextPosition(player *Player, direction string, deltatime fl
 	nextPosition = player.Position
 	switch direction {
 	case "up":
-		nextPosition.Y -= player.Speed * deltatime
-	case "down":
 		nextPosition.Y += player.Speed * deltatime
+	case "down":
+		nextPosition.Y -= player.Speed * deltatime
 	case "left":
 		nextPosition.X -= player.Speed * deltatime
 	case "right":
@@ -197,9 +197,10 @@ func (game *Game) Update() {
 }
 
 type Gfx struct {
-	Size_x    int32
-	Size_y    int32
-	Tile_size int32
+	Size_x       int32
+	Size_y       int32
+	Tile_size    int32
+	Game_Texture rl.RenderTexture2D
 }
 
 func NewGfx(size_x, size_y int32) Gfx {
@@ -227,6 +228,16 @@ func (gfx *Gfx) DrawPlayers(game *Game) {
 		rl.DrawRectangleRec(v.HitBox, rl.Beige)
 		//rl.DrawRectangle(int32(v.Position.X)*gfx.Tile_size, int32(v.Position.Y)*gfx.Tile_size, gfx.Tile_size, gfx.Tile_size, rl.Red)
 	}
+}
+
+func (gfx *Gfx) GenerateGameTexture(game *Game) {
+	//TODO check for texture init
+	rl.BeginTextureMode(gfx.Game_Texture)
+	rl.ClearBackground(rl.White)
+	gfx.DrawBoard(game)
+	gfx.DrawPlayers(game)
+	rl.EndTextureMode()
+
 }
 
 func (gfx *Gfx) HandleInput(game *Game, deltatime float32) {
@@ -257,18 +268,24 @@ func (gfx *Gfx) GetPlayer1Key() (string, bool) {
 	}
 }
 
+func (gfx *Gfx) InitGameTextureBox(game *Game) {
+	gfx.Game_Texture = rl.LoadRenderTexture(gfx.Tile_size*game.GameBoard.Size_x, gfx.Tile_size*game.GameBoard.Size_y) // rl.LoadRenderTexture(int32(float32(size_x)*0.8), int32(float32(size_y)*0.8))
+	rl.SetTextureFilter(gfx.Game_Texture.Texture, rl.TextureFilterMode(rl.RL_TEXTURE_FILTER_BILINEAR))
+
+}
+
 func main() {
 
 	game := NewGame()
 	gfx := NewGfx(800, 400)
+	gfx.InitGameTextureBox(&game)
 	game.AddPlayer("aaa", 0, 1)
 	for !rl.WindowShouldClose() {
 		gfx.HandleInput(&game, rl.GetFrameTime())
+		gfx.GenerateGameTexture(&game)
 		rl.BeginDrawing()
-
 		rl.ClearBackground(rl.RayWhite)
-		gfx.DrawBoard(&game)
-		gfx.DrawPlayers(&game)
+		rl.DrawTexture(gfx.Game_Texture.Texture, 10, 10, rl.White)
 		rl.EndDrawing()
 	}
 }
