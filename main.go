@@ -39,30 +39,32 @@ func (board *Board) Print() {
 	}
 }
 
-func (board *Board) PutPlayers(players []Player) {
-	for i := range players {
-		board.board_matrix[players[i].Position_x][players[i].Position_y] = 2
-	}
-}
-
 type Player struct {
 	Name           string
-	Position_x     int32
-	Position_y     int32
+	Position       rl.Vector2
 	Points         int32
 	AvailableBombs int32
 	Status         bool
+	HitBox         rl.Rectangle
 }
 
-func NewPlayer(name string, position_x, position_y int32) Player {
+func NewPlayer(name string, position_x, position_y float32) Player {
 	player := Player{}
 	player.Name = name
-	player.Position_x = position_x
-	player.Position_y = position_y
+	player.Position.X = position_x
+	player.Position.Y = position_y
 	player.Points = 0
 	player.AvailableBombs = 1
 	player.Status = true
+	player.HitBox = rl.NewRectangle(float32(position_x), float32(position_y), 1, 1)
 	return player
+}
+
+func (player *Player) UpdatePosition(position_x, position_y float32) {
+	player.Position.X = position_x
+	player.Position.Y = position_y
+	player.HitBox.X = position_x
+	player.HitBox.Y = position_y
 }
 
 //func (player *Player) PlaceBomb()
@@ -99,26 +101,25 @@ func NewGame() Game {
 	game.GameBoard = NewBoard(20, 10)
 	return game
 }
-func (game *Game) AddPlayer(name string, position_x, position_y int32) {
+func (game *Game) AddPlayer(name string, position_x, position_y float32) {
 	player := NewPlayer(name, position_x, position_y)
 	game.Players = append(game.Players, player)
 }
 
-func (game *Game) GetNextPosition(player *Player, direction string) [2]int32 {
-	var moveVector [2]int32
+func (game *Game) GetNextPosition(player *Player, direction string) rl.Vector2 {
+	var nextPosition rl.Vector2
+	nextPosition = player.Position
 	switch direction {
 	case "up":
-		moveVector[0] = 1
+		nextPosition.Y += 1
 	case "down":
-		moveVector[0] = -1
+		nextPosition.Y -= 1
 	case "left":
-		moveVector[1] = -1
+		nextPosition.X -= 1
 	case "right":
-		moveVector[1] = 1
+		nextPosition.X += 1
 	}
-	moveVector[1] += player.Position_x
-	moveVector[0] += player.Position_y
-	return moveVector
+	return nextPosition
 }
 func (game *Game) PositionIsValid(position [2]int32) bool {
 	if position[0] <= game.GameBoard.Size_x && position[1] <= game.GameBoard.Size_y && position[0] >= 0 && position[1] >= 0 {
@@ -158,8 +159,8 @@ func (game *Game) PositionCollidesWithObstacle(position [2]int32) bool {
 func (game *Game) MovePlayer(player *Player, direction string) {
 	nextPosition := game.GetNextPosition(player, direction)
 	if game.PositionIsValid(nextPosition) && !game.PositionCollidesWithBomb(nextPosition) && !game.PositionCollidesWithPlayer(nextPosition) && !game.PositionCollidesWithObstacle(nextPosition) {
-		player.Position_y = nextPosition[0]
-		player.Position_x = nextPosition[1]
+		player.Position.Y = nextPosition[0]
+		player.Position.X = nextPosition[1]
 	}
 }
 
@@ -196,7 +197,7 @@ func (gfx *Gfx) DrawBoard(game *Game) {
 
 func (gfx *Gfx) DrawPlayers(game *Game) {
 	for _, v := range game.Players {
-		rl.DrawRectangle(int32(v.Position_x)*gfx.Tile_size, int32(v.Position_y)*gfx.Tile_size, gfx.Tile_size, gfx.Tile_size, rl.Red)
+		rl.DrawRectangle(int32(v.Position.X)*gfx.Tile_size, int32(v.Position.Y)*gfx.Tile_size, gfx.Tile_size, gfx.Tile_size, rl.Red)
 	}
 }
 
