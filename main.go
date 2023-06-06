@@ -32,19 +32,28 @@ func RoundXtoY(x float32, y int32) int32 {
 	}
 }
 
+type TileType int32
+
+const (
+	Blank TileType = iota
+	Wall
+	Breakable
+)
+
 type Board struct {
 	Size_x       int32
 	Size_y       int32
-	board_matrix [][]int32
+	board_matrix [][]TileType
+	Obstacles    []Obstacle
 }
 
 func NewBoard(size_x, size_y int32) Board {
 	board := Board{}
 	board.Size_x = size_x
 	board.Size_y = size_y
-	board.board_matrix = make([][]int32, size_y)
+	board.board_matrix = make([][]TileType, size_y)
 	for i := int32(0); i < size_y; i++ {
-		board.board_matrix[i] = make([]int32, size_x)
+		board.board_matrix[i] = make([]TileType, size_x)
 	}
 	board.Clear()
 	return board
@@ -64,6 +73,26 @@ func (board *Board) Print() {
 		}
 		fmt.Printf("\n")
 	}
+}
+func (board *Board) AddObstacle(position_x, position_y int32, tileType TileType) {
+	obstacle := NewObstacle(position_x, position_y, tileType)
+	board.Obstacles = append(board.Obstacles, obstacle)
+}
+
+type Obstacle struct {
+	Position_x   int32
+	Position_y   int32
+	ObstacleType TileType
+	HitBox       rl.Rectangle
+}
+
+func NewObstacle(position_x, position_y int32, tileType TileType) Obstacle {
+	obstacle := Obstacle{}
+	obstacle.Position_x = position_x
+	obstacle.Position_y = position_y
+	obstacle.ObstacleType = tileType
+	obstacle.HitBox = rl.NewRectangle(float32(position_x*GLOBAL_TILE_SIZE), float32(position_y*GLOBAL_TILE_SIZE), GLOBAL_TILE_SIZE, GLOBAL_TILE_SIZE)
+	return obstacle
 }
 
 type Player struct {
@@ -150,7 +179,7 @@ type Game struct {
 func NewGame() Game {
 	game := Game{}
 	game.Ticks = 0
-	game.GameBoard = NewBoard(12, 12)
+	game.GameBoard = NewBoard(12, 6)
 	return game
 }
 func (game *Game) AddPlayer(name string, position_x, position_y float32) {
@@ -195,7 +224,6 @@ func (game *Game) GetNextPositionHitbox(player *Player, direction string, deltat
 	return nextHitbox
 }
 
-// TODO Fix this
 func (game *Game) PositionIsValid(position rl.Vector2) bool {
 	if position.X <= float32(game.GameBoard.Size_x-1)*GLOBAL_TILE_SIZE+0.2*GLOBAL_TILE_SIZE && position.Y <= float32(game.GameBoard.Size_y-1)*GLOBAL_TILE_SIZE+0.2*GLOBAL_TILE_SIZE && position.X >= 0 && position.Y >= 0 {
 		return true
@@ -234,10 +262,28 @@ func (game *Game) HitboxCollidesWithOtherPlayer(sourcePlayer *Player, hitbox rl.
 		}
 	}
 */
+
+func (game *Game) HitboxCollidesWithObstacle(hitbox rl.Rectangle) bool {
+	/*
+		//WARNING: PositionIsValid MUST be run first
+		positionTile := game.GameBoard.board_matrix[int(position.Y-GLOBAL_TILE_SIZE*0.2)/GLOBAL_TILE_SIZE][int(position.X)/GLOBAL_TILE_SIZE]
+		if positionTile == Wall || positionTile == Breakable {
+			return true
+		} else {
+			return false
+		}*/
+	for _, v := range game.GameBoard.Obstacles {
+		if rl.CheckCollisionRecs(hitbox, v.HitBox) {
+			return true
+		}
+	}
+	return false
+}
+
 func (game *Game) MovePlayer(player *Player, direction string, deltatime float32) {
 	nextPosition := game.GetNextPosition(player, direction, deltatime)
 	nextHitbox := game.GetNextPositionHitbox(player, direction, deltatime)
-	if game.PositionIsValid(nextPosition) && !game.HitboxCollidesWithOtherPlayer(player, nextHitbox) {
+	if game.PositionIsValid(nextPosition) && !game.HitboxCollidesWithObstacle(nextHitbox) && !game.HitboxCollidesWithOtherPlayer(player, nextHitbox) {
 		fmt.Println("Updating position ", nextPosition)
 		player.UpdatePosition(nextPosition)
 		fmt.Println("New Player position: ", player.Position)
@@ -399,15 +445,29 @@ func NewGfx(size_x, size_y int32) Gfx {
 	return gfx
 }
 func (gfx *Gfx) DrawBoard(game *Game) {
-	for i := range game.GameBoard.board_matrix {
-		for j := range game.GameBoard.board_matrix[i] {
-			if game.GameBoard.board_matrix[i][j] == 0 {
-				rl.DrawRectangle(int32(j)*gfx.Tile_size, int32(i)*gfx.Tile_size, gfx.Tile_size, gfx.Tile_size, rl.Gray)
+	/*
+		for i := range game.GameBoard.board_matrix {
+			for j := range game.GameBoard.board_matrix[i] {
+				if game.GameBoard.board_matrix[i][j] == Blank {
+					rl.DrawRectangle(int32(j)*gfx.Tile_size, int32(i)*gfx.Tile_size, gfx.Tile_size, gfx.Tile_size, rl.Gray)
+				} else if game.GameBoard.board_matrix[i][j] == Wall {
+					rl.DrawRectangle(int32(j)*gfx.Tile_size, int32(i)*gfx.Tile_size, gfx.Tile_size, gfx.Tile_size, rl.Black)
+				}
 			}
-		}
-	}
+		}*/
+	/*
+	  for i:=0;i<game.GameBoard.Size_y;i++{
+	    for j:=0;j<game.G
+	  }*/
+	rl.DrawRectangle(0, 0, game.GameBoard.Size_x*gfx.Tile_size, game.GameBoard.Size_y*gfx.Tile_size, rl.Gray)
+
 }
 
+func (gfx *Gfx) DrawObstacles(game *Game) {
+	for _, v := range game.GameBoard.Obstacles {
+		rl.DrawRectangleRec(v.HitBox, rl.Black)
+	}
+}
 func (gfx *Gfx) DrawPlayers(game *Game) {
 	for _, v := range game.Players {
 		if v.Status {
@@ -432,6 +492,7 @@ func (gfx *Gfx) GenerateGameTexture(game *Game) {
 	rl.BeginTextureMode(gfx.Game_Texture)
 	rl.ClearBackground(rl.White)
 	gfx.DrawBoard(game)
+	gfx.DrawObstacles(game)
 	gfx.DrawBombs(game)
 	gfx.DrawPlayers(game)
 	gfx.DrawShrapnel(game)
@@ -536,7 +597,10 @@ func main() {
 	game := NewGame()
 	gfx := NewGfx(600, 600)
 	gfx.InitGameTextureBox(&game)
-	game.AddPlayer("aaa", 0, 1)
+	game.AddPlayer("Pablo", 0, 1)
+
+	game.GameBoard.AddObstacle(4, 1, Wall)
+
 	for !rl.WindowShouldClose() {
 		gfx.HandleInput(&game, rl.GetFrameTime())
 		game.Update()
