@@ -98,8 +98,19 @@ func (gfx *Gfx) DrawPlayers(game *Game) {
 				} else {
 					gfx.DrawDynamicTexture("player1_0", v.Position.X, v.Position.Y)
 				}
-			} else {
-				rl.DrawRectangleRec(v.HitBox, rl.Beige)
+			} else if i == 1 {
+				//rl.DrawRectangleRec(v.HitBox, rl.Beige)
+				if gfx.AnimatePlayer[i] == true {
+					if gfx.PlayerAnimationCurrentFrame == 0 {
+						gfx.DrawDynamicTexture("player2_1", v.Position.X, v.Position.Y)
+
+					} else {
+						gfx.DrawDynamicTexture("player2_2", v.Position.X, v.Position.Y)
+
+					}
+				} else {
+					gfx.DrawDynamicTexture("player2_0", v.Position.X, v.Position.Y)
+				}
 			}
 		}
 		//rl.DrawRectangle(int32(v.Position.X)*gfx.Tile_size, int32(v.Position.Y)*gfx.Tile_size, gfx.Tile_size, gfx.Tile_size, rl.Red)
@@ -176,6 +187,9 @@ func (gfx *Gfx) HandleInput(game *Game, deltatime float32) {
 			playerAlreadyChecked[1] = true
 			game.MovePlayer(&game.Players[1], player2Key, deltatime)
 			fmt.Println("Key pressed: ", player2Key)
+			gfx.AnimatePlayer[1] = true
+		} else {
+			gfx.AnimatePlayer[1] = false
 		}
 
 	}
@@ -275,6 +289,17 @@ func (gfx *Gfx) GetTextureRec(texture_name string) rl.Rectangle {
 	case "player1_2":
 		x = 3
 		y = 1
+
+	case "player2_0":
+		x = 1
+		y = 2
+	case "player2_1":
+		x = 2
+		y = 2
+	case "player2_2":
+		x = 3
+		y = 2
+
 	default:
 		x = 0
 		y = 0
