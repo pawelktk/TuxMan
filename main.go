@@ -1,8 +1,13 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
+	"log"
+	"os"
+	"strconv"
 	"strings"
+
 	//	"log"
 
 	rl "github.com/gen2brain/raylib-go/raylib"
@@ -73,6 +78,53 @@ func (board *Board) Print() {
 			fmt.Printf("%v", board.board_matrix[i][j])
 		}
 		fmt.Printf("\n")
+	}
+}
+
+func GetInt32FromScanner(scanner *bufio.Scanner) int32 {
+	scanner.Scan()
+	scannedInt, err := strconv.Atoi(scanner.Text())
+	if err != nil {
+		log.Fatal(err)
+	}
+	if err := scanner.Err(); err != nil {
+		log.Fatal(err)
+	}
+	return int32(scannedInt)
+
+}
+
+func (board *Board) LoadFromFile(fileName string) {
+	file, err := os.Open(fileName)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+
+	board.Size_x = GetInt32FromScanner(scanner)
+	board.Size_y = GetInt32FromScanner(scanner)
+
+	// x :=0
+	y := 0
+
+	for scanner.Scan() {
+		line := scanner.Text()
+		for x := 0; x < int(board.Size_x); x++ {
+			tileType := TileType(line[x] - '0')
+			if tileType != Blank {
+				board.AddObstacle(int32(x), int32(y), TileType(tileType))
+			}
+		}
+		y++
+	}
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	if err := scanner.Err(); err != nil {
+		log.Fatal(err)
 	}
 }
 
@@ -228,6 +280,8 @@ func NewGame() Game {
 	game := Game{}
 	game.Ticks = 0
 	game.GameBoard = NewBoard(12, 6)
+	game.GameBoard.LoadFromFile("tuxman1.map")
+
 	return game
 }
 func (game *Game) AddPlayer(name string, position_x, position_y float32) {
@@ -622,7 +676,7 @@ func (gfx *Gfx) HandleInput(game *Game, deltatime float32) {
 
 }
 
-// TODO Make placing bombs and movement more responsive
+// DONE Make placing bombs and movement more responsive
 
 func (gfx *Gfx) IsPlayer1BombKeyPressed() bool {
 	if rl.IsKeyPressed(rl.KeyComma) {
@@ -737,8 +791,8 @@ func main() {
 	game.AddPlayer("Pablo", 0, 1)
 	game.AddPlayer("SecondPlayer", GLOBAL_TILE_SIZE*float32(game.GameBoard.Size_x-1), 1)
 
-	game.GameBoard.AddObstacle(4, 1, Wall)
-	game.GameBoard.AddObstacle(2, 2, Breakable)
+	//game.GameBoard.AddObstacle(4, 1, Wall)
+	//game.GameBoard.AddObstacle(2, 2, Breakable)
 
 	for !rl.WindowShouldClose() {
 		gfx.HandleInput(&game, rl.GetFrameTime())
