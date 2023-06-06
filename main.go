@@ -44,13 +44,14 @@ type Board struct {
 	Size_x       int32
 	Size_y       int32
 	board_matrix [][]TileType
-	Obstacles    []Obstacle
+	Obstacles    map[Vector2int32]Obstacle
 }
 
 func NewBoard(size_x, size_y int32) Board {
 	board := Board{}
 	board.Size_x = size_x
 	board.Size_y = size_y
+	board.Obstacles = make(map[Vector2int32]Obstacle)
 	board.board_matrix = make([][]TileType, size_y)
 	for i := int32(0); i < size_y; i++ {
 		board.board_matrix[i] = make([]TileType, size_x)
@@ -74,9 +75,54 @@ func (board *Board) Print() {
 		fmt.Printf("\n")
 	}
 }
+
+type Vector2int32 struct {
+	X int32
+	Y int32
+}
+
+func NewVector2int32(x, y int32) Vector2int32 {
+	vector := Vector2int32{}
+	vector.X = x
+	vector.Y = y
+	return vector
+}
+
 func (board *Board) AddObstacle(position_x, position_y int32, tileType TileType) {
 	obstacle := NewObstacle(position_x, position_y, tileType)
-	board.Obstacles = append(board.Obstacles, obstacle)
+	board.Obstacles[NewVector2int32(position_x*GLOBAL_TILE_SIZE, position_y*GLOBAL_TILE_SIZE)] = obstacle
+	//board.Obstacles = append(board.Obstacles, obstacle)
+}
+func (board *Board) RemoveObstacle(position Vector2int32) {
+	//board.Obstacles = append(board.Obstacles[:obstacle_index], board.Obstacles[obstacle_index+1:]...)
+	fmt.Println("Removing obstacle at", position)
+	delete(board.Obstacles, position)
+}
+
+func (board *Board) RemoveObstacleIfBreakable(position Vector2int32) {
+	fmt.Println("Considering removal of obstacle at", position)
+	obstacleType, exists := board.GetObstacleType(position)
+	if exists && obstacleType == Breakable {
+		board.RemoveObstacle(position)
+	}
+}
+
+func (board *Board) GetObstacleType(position Vector2int32) (TileType, bool) {
+	val, ok := board.Obstacles[position]
+	if ok {
+		return val.ObstacleType, true
+	} else {
+		return Blank, false
+
+	}
+}
+func (board *Board) ObstacleExist(position Vector2int32) bool {
+	_, ok := board.Obstacles[position]
+	if !ok {
+		return false
+	} else {
+		return true
+	}
 }
 
 type Obstacle struct {
@@ -338,16 +384,16 @@ func (game *Game) GenerateShrapnel(sourceBomb *Bomb) {
 		//TODO block at obstacles
 
 		if !up_blocked {
-			game.PlaceShrapnel(sourceBomb.Owner, sourceBomb.Position_x, int32(nextpos_y_up))
+			game.PlaceShrapnelDestructive(sourceBomb.Owner, sourceBomb.Position_x, int32(nextpos_y_up))
 		}
 		if !down_blocked {
-			game.PlaceShrapnel(sourceBomb.Owner, sourceBomb.Position_x, int32(nextpos_y_down))
+			game.PlaceShrapnelDestructive(sourceBomb.Owner, sourceBomb.Position_x, int32(nextpos_y_down))
 		}
 		if !left_blocked {
-			game.PlaceShrapnel(sourceBomb.Owner, int32(nextpos_x_left), sourceBomb.Position_y)
+			game.PlaceShrapnelDestructive(sourceBomb.Owner, int32(nextpos_x_left), sourceBomb.Position_y)
 		}
 		if !right_blocked {
-			game.PlaceShrapnel(sourceBomb.Owner, int32(nextpos_x_right), sourceBomb.Position_y)
+			game.PlaceShrapnelDestructive(sourceBomb.Owner, int32(nextpos_x_right), sourceBomb.Position_y)
 		}
 
 	}
@@ -394,6 +440,13 @@ func (game *Game) PlaceShrapnel(owner *Player, position_x, position_y int32) {
 	shrapnel := NewShrapnel(owner, position_x, position_y)
 	game.Shrapnels = append(game.Shrapnels, shrapnel)
 }
+
+func (game *Game) PlaceShrapnelDestructive(owner *Player, position_x, position_y int32) {
+	game.PlaceShrapnel(owner, position_x, position_y)
+	vecPosition := NewVector2int32(position_x, position_y)
+	game.GameBoard.RemoveObstacleIfBreakable(vecPosition)
+}
+
 func (game *Game) IsShrapnelPlacedHere(position_x, position_y int32) bool {
 	for _, v := range game.Shrapnels {
 		if v.Position_x == position_x && v.Position_y == position_y {
