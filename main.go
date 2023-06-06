@@ -8,6 +8,30 @@ import (
 	rl "github.com/gen2brain/raylib-go/raylib"
 )
 
+func RoundDownXtoY(x float32, y int32) int32 {
+	x2 := int32(x)
+	return x2 - x2%y
+}
+func RoundUpXtoY(x float32, y int32) int32 {
+	x2 := int32(x)
+
+	if x2%y == 0 {
+		return x2
+	} else {
+		return (y - x2%y) + x2
+	}
+}
+func RoundXtoY(x float32, y int32) int32 {
+	x2 := int32(x)
+	if x2%y == 0 {
+		return x2
+	} else if x2%y >= int32(0.5*float32(y)) {
+		return RoundUpXtoY(x, y)
+	} else {
+		return RoundDownXtoY(x, y)
+	}
+}
+
 type Board struct {
 	Size_x       int32
 	Size_y       int32
@@ -22,7 +46,6 @@ func NewBoard(size_x, size_y int32) Board {
 	for i := int32(0); i < size_y; i++ {
 		board.board_matrix[i] = make([]int32, size_x)
 	}
-
 	board.Clear()
 	return board
 }
@@ -59,9 +82,9 @@ func NewPlayer(name string, position_x, position_y float32) Player {
 	player.Position.X = position_x
 	player.Position.Y = position_y
 	player.Points = 0
-	player.AvailableBombs = 3
+	player.AvailableBombs = 13
 	player.Status = true
-	player.HitBox = rl.NewRectangle(float32(position_x), float32(position_y), GLOBAL_TILE_SIZE, GLOBAL_TILE_SIZE)
+	player.HitBox = rl.NewRectangle(float32(position_x), float32(position_y), GLOBAL_TILE_SIZE-GLOBAL_TILE_SIZE*0.2, GLOBAL_TILE_SIZE-GLOBAL_TILE_SIZE*0.2)
 	player.Speed = 50
 	return player
 }
@@ -195,9 +218,21 @@ func (game *Game) MovePlayer(player *Player, direction string, deltatime float32
 
 // TODO Check for multiple bombs on the same tile
 func (game *Game) PlaceBomb(sourcePlayer *Player, location rl.Vector2, radius int32) {
-	bomb := NewBomb(sourcePlayer, int32(math.RoundToEven(float64(location.X))), int32(math.RoundToEven(float64(location.Y))), radius)
-	sourcePlayer.AvailableBombs--
-	game.Bombs = append(game.Bombs, bomb)
+	if !game.IsBombPlacedHere(RoundXtoY(location.X, GLOBAL_TILE_SIZE), RoundXtoY(location.Y, GLOBAL_TILE_SIZE)) {
+
+		bomb := NewBomb(sourcePlayer, RoundXtoY(location.X, GLOBAL_TILE_SIZE), RoundXtoY(location.Y, GLOBAL_TILE_SIZE), radius)
+		sourcePlayer.AvailableBombs--
+		game.Bombs = append(game.Bombs, bomb)
+	}
+}
+
+func (game *Game) IsBombPlacedHere(position_x, position_y int32) bool {
+	for _, v := range game.Bombs {
+		if v.Position_x == position_x && v.Position_y == position_y {
+			return true
+		}
+	}
+	return false
 }
 
 func (game *Game) Update() {
@@ -214,7 +249,7 @@ type Gfx struct {
 	Game_Texture_Size_y int32
 }
 
-const GLOBAL_TILE_SIZE = 30
+const GLOBAL_TILE_SIZE = 20
 
 func NewGfx(size_x, size_y int32) Gfx {
 	gfx := Gfx{}
@@ -266,22 +301,30 @@ func (gfx *Gfx) HandleInput(game *Game, deltatime float32) {
 
 	player1Key, player1KeyIsPressed := gfx.GetPlayer1Key()
 
+	if gfx.IsPlayer1BombKeyPressed() && game.Players[0].AvailableBombs > 0 {
+		game.PlaceBomb(&game.Players[0], game.Players[0].Position, 3)
+	}
+
 	if player1KeyIsPressed && !playerAlreadyChecked[0] {
 		playerAlreadyChecked[0] = true
-		if player1Key != "space" {
-			game.MovePlayer(&game.Players[0], player1Key, deltatime)
-		} else if game.Players[0].AvailableBombs > 0 {
-			game.PlaceBomb(&game.Players[0], game.Players[0].Position, 3)
-		}
+		game.MovePlayer(&game.Players[0], player1Key, deltatime)
 		fmt.Println("Key pressed: ", player1Key)
 	}
+
 }
 
 // TODO Make placing bombs and movement more responsive
+
+func (gfx *Gfx) IsPlayer1BombKeyPressed() bool {
+	if rl.IsKeyPressed(rl.KeySpace) {
+		return true
+	} else {
+		return false
+	}
+}
+
 func (gfx *Gfx) GetPlayer1Key() (string, bool) {
 	switch {
-	case rl.IsKeyDown(rl.KeySpace):
-		return "space", true
 	case rl.IsKeyDown(rl.KeyLeft):
 		return "left", true
 	case rl.IsKeyDown(rl.KeyRight):
