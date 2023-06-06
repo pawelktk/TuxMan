@@ -2,18 +2,21 @@ package main
 
 import (
 	"fmt"
-	"math/rand"
 	rl "github.com/gen2brain/raylib-go/raylib"
+	"math/rand"
 )
 
 type Gfx struct {
-	Size_x              int32
-	Size_y              int32
-	Tile_size           int32
-	Game_Texture        rl.RenderTexture2D
-	Game_Texture_Size_x int32
-	Game_Texture_Size_y int32
-	SpriteSheet         rl.Texture2D
+	Size_x                      int32
+	Size_y                      int32
+	Tile_size                   int32
+	Game_Texture                rl.RenderTexture2D
+	Game_Texture_Size_x         int32
+	Game_Texture_Size_y         int32
+	SpriteSheet                 rl.Texture2D
+	AnimatePlayer               [4]bool
+	PlayerAnimationFrameCounter int32
+	PlayerAnimationCurrentFrame int32
 }
 
 const GLOBAL_TILE_SIZE = 30
@@ -23,6 +26,7 @@ func NewGfx(size_x, size_y int32) Gfx {
 	gfx.Size_x = size_x
 	gfx.Size_y = size_y
 	gfx.Tile_size = GLOBAL_TILE_SIZE //= 30
+	gfx.PlayerAnimationFrameCounter = 0
 	rl.InitWindow(size_x, size_y, "TuxMan")
 	gfx.SpriteSheet = rl.LoadTexture("spritesheet.png")
 	//defer rl.CloseWindow()
@@ -66,10 +70,37 @@ func (gfx *Gfx) DrawObstacles(game *Game) {
 		}
 	}
 }
+
+func (gfx *Gfx) UpdatePlayerFrameCounter() {
+	gfx.PlayerAnimationFrameCounter++
+	if gfx.PlayerAnimationFrameCounter >= 5 {
+		gfx.PlayerAnimationFrameCounter = 0
+		gfx.PlayerAnimationCurrentFrame++
+		if gfx.PlayerAnimationCurrentFrame > 1 {
+			gfx.PlayerAnimationCurrentFrame = 0
+		}
+	}
+}
+
 func (gfx *Gfx) DrawPlayers(game *Game) {
-	for _, v := range game.Players {
+	gfx.UpdatePlayerFrameCounter()
+	for i, v := range game.Players {
 		if v.Status {
-			rl.DrawRectangleRec(v.HitBox, rl.Beige)
+			if i == 0 {
+				if gfx.AnimatePlayer[i] == true {
+					if gfx.PlayerAnimationCurrentFrame == 0 {
+						gfx.DrawDynamicTexture("player1_1", v.Position.X, v.Position.Y)
+
+					} else {
+						gfx.DrawDynamicTexture("player1_2", v.Position.X, v.Position.Y)
+
+					}
+				} else {
+					gfx.DrawDynamicTexture("player1_0", v.Position.X, v.Position.Y)
+				}
+			} else {
+				rl.DrawRectangleRec(v.HitBox, rl.Beige)
+			}
 		}
 		//rl.DrawRectangle(int32(v.Position.X)*gfx.Tile_size, int32(v.Position.Y)*gfx.Tile_size, gfx.Tile_size, gfx.Tile_size, rl.Red)
 	}
@@ -96,6 +127,11 @@ func (gfx *Gfx) DrawShrapnel(game *Game) {
 func (gfx *Gfx) DrawStaticTexture(texture_name string, position_x, position_y int32) {
 	destRect := rl.NewRectangle(float32(position_x), float32(position_y), GLOBAL_TILE_SIZE, GLOBAL_TILE_SIZE)
 	rl.DrawTexturePro(gfx.SpriteSheet, gfx.GetTextureRec(texture_name), destRect, rl.NewVector2(GLOBAL_TILE_SIZE, GLOBAL_TILE_SIZE), 180, rl.White)
+}
+
+func (gfx *Gfx) DrawDynamicTexture(texture_name string, position_x, position_y float32) {
+	destRect := rl.NewRectangle(position_x, position_y, GLOBAL_TILE_SIZE, GLOBAL_TILE_SIZE)
+	rl.DrawTexturePro(gfx.SpriteSheet, gfx.GetTextureRec(texture_name), destRect, rl.NewVector2(GLOBAL_TILE_SIZE*1.0, GLOBAL_TILE_SIZE*1.0), 180, rl.White)
 }
 
 func (gfx *Gfx) GenerateGameTexture(game *Game) {
@@ -125,6 +161,9 @@ func (gfx *Gfx) HandleInput(game *Game, deltatime float32) {
 		playerAlreadyChecked[0] = true
 		game.MovePlayer(&game.Players[0], player1Key, deltatime)
 		fmt.Println("Key pressed: ", player1Key)
+		gfx.AnimatePlayer[0] = true
+	} else {
+		gfx.AnimatePlayer[0] = false
 	}
 	if len(game.Players) > 1 {
 		player2Key, player2KeyIsPressed := gfx.GetPlayer2Key()
@@ -226,6 +265,16 @@ func (gfx *Gfx) GetTextureRec(texture_name string) rl.Rectangle {
 	case "bush":
 		x = 3
 		y = 0
+
+	case "player1_0":
+		x = 1
+		y = 1
+	case "player1_1":
+		x = 2
+		y = 1
+	case "player1_2":
+		x = 3
+		y = 1
 	default:
 		x = 0
 		y = 0
