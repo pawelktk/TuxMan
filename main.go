@@ -103,6 +103,7 @@ type Player struct {
 	Status         bool
 	HitBox         rl.Rectangle
 	Speed          float32
+	PlayerSize     float32
 }
 
 func NewPlayer(name string, position_x, position_y float32) Player {
@@ -113,7 +114,8 @@ func NewPlayer(name string, position_x, position_y float32) Player {
 	player.Points = 0
 	player.AvailableBombs = 13
 	player.Status = true
-	player.HitBox = rl.NewRectangle(float32(position_x), float32(position_y), GLOBAL_TILE_SIZE-GLOBAL_TILE_SIZE*0.2, GLOBAL_TILE_SIZE-GLOBAL_TILE_SIZE*0.2)
+	player.PlayerSize = GLOBAL_TILE_SIZE - GLOBAL_TILE_SIZE*0.2
+	player.HitBox = rl.NewRectangle(float32(position_x), float32(position_y), player.PlayerSize, player.PlayerSize)
 	player.Speed = 50
 	return player
 }
@@ -416,7 +418,7 @@ func (game *Game) GameShouldEnd() (bool, *Player) {
 			winner = &game.Players[i]
 		}
 	}
-	if players_left < 1 {
+	if players_left == 1 {
 		return true, winner
 	} else {
 		return false, nil
@@ -465,7 +467,11 @@ func (gfx *Gfx) DrawBoard(game *Game) {
 
 func (gfx *Gfx) DrawObstacles(game *Game) {
 	for _, v := range game.GameBoard.Obstacles {
-		rl.DrawRectangleRec(v.HitBox, rl.Black)
+		if v.ObstacleType == Wall {
+			rl.DrawRectangleRec(v.HitBox, rl.Black)
+		} else if v.ObstacleType == Breakable {
+			rl.DrawRectangleRec(v.HitBox, rl.Brown)
+		}
 	}
 }
 func (gfx *Gfx) DrawPlayers(game *Game) {
@@ -515,13 +521,27 @@ func (gfx *Gfx) HandleInput(game *Game, deltatime float32) {
 		game.MovePlayer(&game.Players[0], player1Key, deltatime)
 		fmt.Println("Key pressed: ", player1Key)
 	}
+	if len(game.Players) > 1 {
+		player2Key, player2KeyIsPressed := gfx.GetPlayer2Key()
+
+		if gfx.IsPlayer2BombKeyPressed() && game.Players[1].AvailableBombs > 0 {
+			game.PlaceBomb(&game.Players[1], game.Players[1].Position, 3)
+		}
+
+		if player2KeyIsPressed && !playerAlreadyChecked[1] {
+			playerAlreadyChecked[1] = true
+			game.MovePlayer(&game.Players[1], player2Key, deltatime)
+			fmt.Println("Key pressed: ", player2Key)
+		}
+
+	}
 
 }
 
 // TODO Make placing bombs and movement more responsive
 
 func (gfx *Gfx) IsPlayer1BombKeyPressed() bool {
-	if rl.IsKeyPressed(rl.KeySpace) {
+	if rl.IsKeyPressed(rl.KeyComma) {
 		return true
 	} else {
 		return false
@@ -547,6 +567,39 @@ func (gfx *Gfx) GetPlayer1Key() (string, bool) {
 	case rl.IsKeyDown(rl.KeyUp):
 		return "up", true
 	case rl.IsKeyDown(rl.KeyDown):
+		return "down", true
+	default:
+		return "", false
+	}
+}
+
+func (gfx *Gfx) IsPlayer2BombKeyPressed() bool {
+	if rl.IsKeyPressed(rl.KeySpace) {
+		return true
+	} else {
+		return false
+	}
+}
+
+func (gfx *Gfx) GetPlayer2Key() (string, bool) {
+	switch {
+	case rl.IsKeyDown(rl.KeyA):
+		if rl.IsKeyDown(rl.KeyW) {
+			return "left-up", true
+		} else if rl.IsKeyDown(rl.KeyS) {
+			return "left-down", true
+		}
+		return "left", true
+	case rl.IsKeyDown(rl.KeyD):
+		if rl.IsKeyDown(rl.KeyW) {
+			return "right-up", true
+		} else if rl.IsKeyDown(rl.KeyS) {
+			return "right-down", true
+		}
+		return "right", true
+	case rl.IsKeyDown(rl.KeyW):
+		return "up", true
+	case rl.IsKeyDown(rl.KeyS):
 		return "down", true
 	default:
 		return "", false
@@ -598,8 +651,10 @@ func main() {
 	gfx := NewGfx(600, 600)
 	gfx.InitGameTextureBox(&game)
 	game.AddPlayer("Pablo", 0, 1)
+	game.AddPlayer("SecondPlayer", GLOBAL_TILE_SIZE*float32(game.GameBoard.Size_x-1), 1)
 
 	game.GameBoard.AddObstacle(4, 1, Wall)
+	game.GameBoard.AddObstacle(2, 2, Breakable)
 
 	for !rl.WindowShouldClose() {
 		gfx.HandleInput(&game, rl.GetFrameTime())
