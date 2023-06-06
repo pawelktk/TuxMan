@@ -361,17 +361,19 @@ func (game *Game) Update() {
 
 }
 
-func (game *Game) GameShouldEnd() bool {
+func (game *Game) GameShouldEnd() (bool, *Player) {
 	players_left := 0
-	for _, v := range game.Players {
+	winner := &game.Players[0]
+	for i, v := range game.Players {
 		if v.Status {
 			players_left++
+			winner = &game.Players[i]
 		}
 	}
 	if players_left < 1 {
-		return false
+		return true, winner
 	} else {
-		return true
+		return false, nil
 	}
 }
 
@@ -500,6 +502,34 @@ func (gfx *Gfx) InitGameTextureBox(game *Game) {
 func (gfx *Gfx) TextCenterX(text string, fontSize int32) int32 {
 	return (gfx.Size_x - rl.MeasureText(text, fontSize)) / 2
 }
+func (gfx *Gfx) TextCenterY(text string, fontSize int32) int32 {
+	sizeVector := rl.MeasureTextEx(rl.GetFontDefault(), text, float32(fontSize), 0)
+	return (gfx.Size_y - int32(sizeVector.Y)) / 2
+}
+
+func (gfx *Gfx) DrawTextCenterX(text string, fontSize int32, y int32) {
+	rl.DrawText(text, gfx.TextCenterX(text, fontSize), y, fontSize, rl.Black)
+}
+
+func (gfx *Gfx) DrawTextOnScreenPart(text string, fontSize int32, xPart, yPart float32) {
+	rl.DrawText(text, int32(float32(gfx.TextCenterX(text, fontSize)*2)*xPart), int32(float32(gfx.TextCenterY(text, fontSize)*2)*yPart), fontSize, rl.Black)
+}
+
+func GameOverScreen(gfx *Gfx, game *Game, winner *Player) {
+	rl.ClearBackground(rl.RayWhite)
+	gfx.DrawTextOnScreenPart("Game Over!", 50, 0.5, 0.3)
+	gfx.DrawTextOnScreenPart("Winner: "+winner.Name, 40, 0.5, 0.4)
+	gfx.DrawTextOnScreenPart("Kills: "+fmt.Sprint(winner.Points), 40, 0.5, 0.5)
+
+}
+
+func GameScreen(gfx *Gfx, game *Game) {
+	rl.ClearBackground(rl.RayWhite)
+	gfx.DrawTextCenterX("TuxMan", 40, 10)
+
+	texturePosition := rl.NewVector2(float32((gfx.Size_x-gfx.Game_Texture_Size_x)/2), 60)
+	rl.DrawTextureEx(gfx.Game_Texture.Texture, texturePosition, 0, 1, rl.White)
+}
 
 func main() {
 	//rl.SetConfigFlags(rl.FlagWindowResizable)
@@ -510,12 +540,16 @@ func main() {
 	for !rl.WindowShouldClose() {
 		gfx.HandleInput(&game, rl.GetFrameTime())
 		game.Update()
+
 		gfx.GenerateGameTexture(&game)
+
+		gameOver, winner := game.GameShouldEnd()
 		rl.BeginDrawing()
-		rl.ClearBackground(rl.RayWhite)
-		rl.DrawText("TuxMan", gfx.TextCenterX("TuxMan", 40), 10, 40, rl.Black)
-		texturePosition := rl.NewVector2(float32((gfx.Size_x-gfx.Game_Texture_Size_x)/2), 60)
-		rl.DrawTextureEx(gfx.Game_Texture.Texture, texturePosition, 0, 1, rl.White)
+		if gameOver {
+			GameOverScreen(&gfx, &game, winner)
+		} else {
+			GameScreen(&gfx, &game)
+		}
 		rl.EndDrawing()
 	}
 }
