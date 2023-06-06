@@ -116,10 +116,26 @@ func NewBomb(owner *Player, position_x int32, position_y int32, radius int32) Bo
 	bomb.Owner = owner
 	bomb.Position_x = position_x
 	bomb.Position_y = position_y
-	bomb.RemainingTicks = 10
+	bomb.RemainingTicks = 60
 	bomb.Radius = 2
 
 	return bomb
+}
+
+type Shrapnel struct {
+	Position_x     int32
+	Position_y     int32
+	RemainingTicks int32
+	Owner          *Player
+}
+
+func NewShrapnel(owner *Player, position_x int32, position_y int32) Shrapnel {
+	shrapnel := Shrapnel{}
+	shrapnel.Owner = owner
+	shrapnel.Position_x = position_x
+	shrapnel.Position_y = position_y
+	shrapnel.RemainingTicks = 10
+	return shrapnel
 }
 
 type Game struct {
@@ -234,8 +250,32 @@ func (game *Game) IsBombPlacedHere(position_x, position_y int32) bool {
 	return false
 }
 
+func (game *Game) ExplodeBomb(bomb_index int) {
+	game.GenerateShrapnel(&game.Bombs[bomb_index])
+	game.Bombs[bomb_index].Owner.AvailableBombs++
+	game.Bombs = append(game.Bombs[:bomb_index], game.Bombs[bomb_index+1:]...)
+}
+
+func (game *Game) GenerateShrapnel(sourceBomb *Bomb) {
+	NewShrapnel(sourceBomb.Owner, sourceBomb.Position_x, sourceBomb.Position_y)
+	var up_blocked, down_blocked, left_blocked, right_blocked bool
+	for i := 1; i <= int(sourceBomb.Radius); i++ {
+
+	}
+}
+func (game *Game) UpdateBombs() {
+	for i := range game.Bombs {
+		game.Bombs[i].RemainingTicks--
+		if game.Bombs[i].RemainingTicks <= 0 {
+			game.ExplodeBomb(i)
+			i--
+		}
+	}
+}
+
 func (game *Game) Update() {
 	game.Ticks++
+	game.UpdateBombs()
 
 }
 
@@ -356,6 +396,7 @@ func main() {
 	game.AddPlayer("aaa", 0, 1)
 	for !rl.WindowShouldClose() {
 		gfx.HandleInput(&game, rl.GetFrameTime())
+		game.Update()
 		gfx.GenerateGameTexture(&game)
 		rl.BeginDrawing()
 		rl.ClearBackground(rl.RayWhite)
