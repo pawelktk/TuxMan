@@ -143,6 +143,7 @@ type Game struct {
 	GameBoard Board
 	Players   []Player
 	Bombs     []Bomb
+	Shrapnels []Shrapnel
 }
 
 func NewGame() Game {
@@ -258,39 +259,39 @@ func (game *Game) ExplodeBomb(bomb_index int) {
 
 func (game *Game) GenerateShrapnel(sourceBomb *Bomb) {
 	//TODO make it break stuff
-	NewShrapnel(sourceBomb.Owner, sourceBomb.Position_x, sourceBomb.Position_y)
+	game.PlaceShrapnel(sourceBomb.Owner, sourceBomb.Position_x, sourceBomb.Position_y)
 	var up_blocked, down_blocked, left_blocked, right_blocked bool
-	for i := GLOBAL_TILE_SIZE; i <= int(sourceBomb.Radius); i += GLOBAL_TILE_SIZE {
+	for i := GLOBAL_TILE_SIZE; i <= int(sourceBomb.Radius)*GLOBAL_TILE_SIZE; i += GLOBAL_TILE_SIZE {
 		nextpos_x_right := int(sourceBomb.Position_x) + i
 		nextpos_x_left := int(sourceBomb.Position_x) - i
 
 		nextpos_y_up := int(sourceBomb.Position_y) + i
 		nextpos_y_down := int(sourceBomb.Position_y) - i
 
-		up_blocked = nextpos_y_up > int(game.GameBoard.Size_y)
+		up_blocked = nextpos_y_up > int(game.GameBoard.Size_y)*GLOBAL_TILE_SIZE
 		down_blocked = nextpos_y_down < 0
-		right_blocked = nextpos_x_right > int(game.GameBoard.Size_x)
+		right_blocked = nextpos_x_right > int(game.GameBoard.Size_x)*GLOBAL_TILE_SIZE
 		left_blocked = nextpos_x_left < 0
 
 		//TODO block at obstacles
 
 		if !up_blocked {
-			NewShrapnel(sourceBomb.Owner, sourceBomb.Position_x, int32(nextpos_y_up))
+			game.PlaceShrapnel(sourceBomb.Owner, sourceBomb.Position_x, int32(nextpos_y_up))
 		}
 		if !down_blocked {
-			NewShrapnel(sourceBomb.Owner, sourceBomb.Position_x, int32(nextpos_y_down))
+			game.PlaceShrapnel(sourceBomb.Owner, sourceBomb.Position_x, int32(nextpos_y_down))
 		}
 		if !left_blocked {
-			NewShrapnel(sourceBomb.Owner, int32(nextpos_x_left), sourceBomb.Position_y)
+			game.PlaceShrapnel(sourceBomb.Owner, int32(nextpos_x_left), sourceBomb.Position_y)
 		}
 		if !right_blocked {
-			NewShrapnel(sourceBomb.Owner, int32(nextpos_x_right), sourceBomb.Position_y)
+			game.PlaceShrapnel(sourceBomb.Owner, int32(nextpos_x_right), sourceBomb.Position_y)
 		}
 
 	}
 }
 func (game *Game) UpdateBombs() {
-	for i := range game.Bombs {
+	for i := 0; i < len(game.Bombs); i++ {
 		game.Bombs[i].RemainingTicks--
 		if game.Bombs[i].RemainingTicks <= 0 {
 			game.ExplodeBomb(i)
@@ -301,6 +302,19 @@ func (game *Game) UpdateBombs() {
 
 //TODO update shrapnel
 
+func (game *Game) PlaceShrapnel(owner *Player, position_x, position_y int32) {
+	//TODO check if shrapnel is already placed here
+	shrapnel := NewShrapnel(owner, position_x, position_y)
+	game.Shrapnels = append(game.Shrapnels, shrapnel)
+}
+func (game *Game) IsShrapnelPlacedHere(position_x, position_y int32) bool {
+	for _, v := range game.Shrapnels {
+		if v.Position_x == position_x && v.Position_y == position_y {
+			return true
+		}
+	}
+	return false
+}
 func (game *Game) Update() {
 	game.Ticks++
 	game.UpdateBombs()
@@ -350,12 +364,17 @@ func (gfx *Gfx) DrawBombs(game *Game) {
 		rl.DrawRectangle(v.Position_x, v.Position_y, GLOBAL_TILE_SIZE, GLOBAL_TILE_SIZE, rl.Red)
 	}
 }
-
+func (gfx *Gfx) DrawShrapnel(game *Game) {
+	for _, v := range game.Shrapnels {
+		rl.DrawRectangle(v.Position_x, v.Position_y, GLOBAL_TILE_SIZE, GLOBAL_TILE_SIZE, rl.Orange)
+	}
+}
 func (gfx *Gfx) GenerateGameTexture(game *Game) {
 	//TODO check for texture init
 	rl.BeginTextureMode(gfx.Game_Texture)
 	rl.ClearBackground(rl.White)
 	gfx.DrawBoard(game)
+	gfx.DrawShrapnel(game)
 	gfx.DrawBombs(game)
 	gfx.DrawPlayers(game)
 	rl.EndTextureMode()
