@@ -8,6 +8,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 
 	//	"log"
 
@@ -129,6 +130,32 @@ func (board *Board) LoadFromFile(fileName string) {
 	}
 }
 
+func (board *Board) GenerateRandom15x15Map() {
+	board.Size_x = 15
+	board.Size_y = 15
+	generatorSource := rand.NewSource(time.Now().UnixNano())
+	generator := rand.New(generatorSource)
+	for i := 0; i < 15-2; i += 3 {
+		for j := 0; j < 15-2; j += 3 {
+			for k := 0; k < 2; k++ {
+				x := i + generator.Intn(3)
+				y := j + generator.Intn(3)
+				if !board.ObstacleExist(NewVector2int32(int32(x), int32(y))) && !((x < 3 && y < 3) || (x < 3 && y > 15-4) || (x > 15-4 && y < 3) || (x > 15-4 && y > 15-4)) {
+					board.AddObstacle(int32(x), int32(y), Wall)
+				}
+			}
+			for k := 0; k < 5; k++ {
+				x := i + generator.Intn(3)
+				y := j + generator.Intn(3)
+				if !board.ObstacleExist(NewVector2int32(int32(x), int32(y))) && !((x < 3 && y < 3) || (x < 3 && y > 15-4) || (x > 15-4 && y < 3) || (x > 15-4 && y > 15-4)) {
+					board.AddObstacle(int32(x), int32(y), Breakable)
+				}
+			}
+		}
+	}
+
+}
+
 type Vector2int32 struct {
 	X int32
 	Y int32
@@ -215,7 +242,7 @@ func NewPlayer(name string, position_x, position_y float32) Player {
 	player.Status = true
 	player.PlayerSize = GLOBAL_TILE_SIZE - GLOBAL_TILE_SIZE*0.2
 	player.HitBox = rl.NewRectangle(float32(position_x), float32(position_y), player.PlayerSize, player.PlayerSize)
-	player.Speed = 50
+	player.Speed = 70
 	return player
 }
 
@@ -280,8 +307,9 @@ type Game struct {
 func NewGame() Game {
 	game := Game{}
 	game.Ticks = 0
-	game.GameBoard = NewBoard(12, 6)
-	game.GameBoard.LoadFromFile("tuxman16.map")
+	game.GameBoard = NewBoard(15, 15)
+	//game.GameBoard.LoadFromFile("tuxman16.map")
+	game.GameBoard.GenerateRandom15x15Map()
 
 	return game
 }
@@ -574,7 +602,7 @@ type Gfx struct {
 	SpriteSheet         rl.Texture2D
 }
 
-const GLOBAL_TILE_SIZE = 20
+const GLOBAL_TILE_SIZE = 30
 
 func NewGfx(size_x, size_y int32) Gfx {
 	gfx := Gfx{}
