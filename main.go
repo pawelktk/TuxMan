@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"math"
 	//	"log"
 
 	rl "github.com/gen2brain/raylib-go/raylib"
@@ -167,7 +166,7 @@ func (game *Game) GetNextPositionHitbox(player *Player, direction string, deltat
 
 // TODO Fix this
 func (game *Game) PositionIsValid(position rl.Vector2) bool {
-	if position.X <= float32(game.GameBoard.Size_x-1)*GLOBAL_TILE_SIZE && position.Y <= float32(game.GameBoard.Size_y-1)*GLOBAL_TILE_SIZE && position.X >= 0 && position.Y >= 0 {
+	if position.X <= float32(game.GameBoard.Size_x-1)*GLOBAL_TILE_SIZE+0.2*GLOBAL_TILE_SIZE && position.Y <= float32(game.GameBoard.Size_y-1)*GLOBAL_TILE_SIZE+0.2*GLOBAL_TILE_SIZE && position.X >= 0 && position.Y >= 0 {
 		return true
 	} else {
 		return false
