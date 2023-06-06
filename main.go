@@ -366,35 +366,66 @@ func (game *Game) ExplodeBomb(bomb_index int) {
 }
 
 func (game *Game) GenerateShrapnel(sourceBomb *Bomb) {
-	//TODO make it break stuff
+	//DONE make it break stuff
 	game.PlaceShrapnel(sourceBomb.Owner, sourceBomb.Position_x, sourceBomb.Position_y)
 	var up_blocked, down_blocked, left_blocked, right_blocked bool
 	for i := GLOBAL_TILE_SIZE; i <= int(sourceBomb.Radius)*GLOBAL_TILE_SIZE; i += GLOBAL_TILE_SIZE {
+
+		fmt.Println("#Shrapnel spread round ", i/GLOBAL_TILE_SIZE)
+
 		nextpos_x_right := int(sourceBomb.Position_x) + i
 		nextpos_x_left := int(sourceBomb.Position_x) - i
 
 		nextpos_y_up := int(sourceBomb.Position_y) + i
 		nextpos_y_down := int(sourceBomb.Position_y) - i
 
-		up_blocked = nextpos_y_up > int(game.GameBoard.Size_y)*GLOBAL_TILE_SIZE
-		down_blocked = nextpos_y_down < 0
-		right_blocked = nextpos_x_right > int(game.GameBoard.Size_x)*GLOBAL_TILE_SIZE
-		left_blocked = nextpos_x_left < 0
+		up_blocked = up_blocked || (nextpos_y_up > int(game.GameBoard.Size_y)*GLOBAL_TILE_SIZE)
+		down_blocked = down_blocked || (nextpos_y_down < 0)
+		right_blocked = right_blocked || (nextpos_x_right > int(game.GameBoard.Size_x)*GLOBAL_TILE_SIZE)
+		left_blocked = left_blocked || (nextpos_x_left < 0)
 
-		//TODO block at obstacles
+		fmt.Printf("Initial check for map boundaries: \n\tup_blocked: %v\n\tdown_blocked: %v\n\tright_blocked: %v\n\tleft_blocked: %v\n", up_blocked, down_blocked, right_blocked, left_blocked)
+		//DONE block at obstacles
 
 		if !up_blocked {
-			game.PlaceShrapnelDestructive(sourceBomb.Owner, sourceBomb.Position_x, int32(nextpos_y_up))
+			vecPosition := NewVector2int32(sourceBomb.Position_x, int32(nextpos_y_up))
+			obstacleType, _ := game.GameBoard.GetObstacleType(vecPosition)
+			//fmt.Printf("->vecPosition: %v\n->obstacleType: %v\n", vecPosition, obstacleType)
+			if obstacleType == Wall {
+				up_blocked = true
+			} else {
+				game.PlaceShrapnelDestructive(sourceBomb.Owner, sourceBomb.Position_x, int32(nextpos_y_up))
+			}
 		}
 		if !down_blocked {
-			game.PlaceShrapnelDestructive(sourceBomb.Owner, sourceBomb.Position_x, int32(nextpos_y_down))
+			vecPosition := NewVector2int32(sourceBomb.Position_x, int32(nextpos_y_down))
+			obstacleType, _ := game.GameBoard.GetObstacleType(vecPosition)
+			if obstacleType == Wall {
+				down_blocked = true
+			} else {
+				game.PlaceShrapnelDestructive(sourceBomb.Owner, sourceBomb.Position_x, int32(nextpos_y_down))
+			}
 		}
 		if !left_blocked {
-			game.PlaceShrapnelDestructive(sourceBomb.Owner, int32(nextpos_x_left), sourceBomb.Position_y)
+			vecPosition := NewVector2int32(int32(nextpos_x_left), sourceBomb.Position_y)
+			obstacleType, _ := game.GameBoard.GetObstacleType(vecPosition)
+			if obstacleType == Wall {
+				left_blocked = true
+			} else {
+				game.PlaceShrapnelDestructive(sourceBomb.Owner, int32(nextpos_x_left), sourceBomb.Position_y)
+			}
 		}
 		if !right_blocked {
-			game.PlaceShrapnelDestructive(sourceBomb.Owner, int32(nextpos_x_right), sourceBomb.Position_y)
+
+			vecPosition := NewVector2int32(int32(nextpos_x_right), sourceBomb.Position_y)
+			obstacleType, _ := game.GameBoard.GetObstacleType(vecPosition)
+			if obstacleType == Wall {
+				right_blocked = true
+			} else {
+				game.PlaceShrapnelDestructive(sourceBomb.Owner, int32(nextpos_x_right), sourceBomb.Position_y)
+			}
 		}
+		fmt.Printf("Check for obstacles: \n\tup_blocked: %v\n\tdown_blocked: %v\n\tright_blocked: %v\n\tleft_blocked: %v\n", up_blocked, down_blocked, right_blocked, left_blocked)
 
 	}
 }
