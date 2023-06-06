@@ -619,7 +619,8 @@ func (gfx *Gfx) DrawObstacles(game *Game) {
 		if v.ObstacleType == Wall {
 			rl.DrawRectangleRec(v.HitBox, rl.Black)
 		} else if v.ObstacleType == Breakable {
-			rl.DrawRectangleRec(v.HitBox, rl.Brown)
+			//rl.DrawRectangleRec(v.HitBox, rl.Brown)
+			gfx.DrawStaticTexture("bush", int32(v.HitBox.X), int32(v.HitBox.Y))
 		}
 	}
 }
@@ -779,6 +780,9 @@ func (gfx *Gfx) GetTextureRec(texture_name string) rl.Rectangle {
 		y = 0
 	case "tile_grass":
 		x = 1
+		y = 0
+	case "bush":
+		x = 3
 		y = 0
 	default:
 		x = 0
