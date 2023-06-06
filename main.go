@@ -299,8 +299,33 @@ func (game *Game) UpdateBombs() {
 		}
 	}
 }
+func (game *Game) RemoveShrapnel(shrapnel_index int) {
+	game.Shrapnels[shrapnel_index].Owner.AvailableBombs++
+	game.Shrapnels = append(game.Shrapnels[:shrapnel_index], game.Shrapnels[shrapnel_index+1:]...)
+}
+func (game *Game) UpdateShrapnels() {
+	for i := 0; i < len(game.Shrapnels); i++ {
+		game.Shrapnels[i].RemainingTicks--
+		if game.Shrapnels[i].RemainingTicks <= 0 {
+			game.KillPlayersUsingShrapnel(&game.Shrapnels[i])
+			game.RemoveShrapnel(i)
+			i--
+		}
+	}
+}
 
-//TODO update shrapnel
+func (game *Game) KillPlayersUsingShrapnel(sourceShrapnel *Shrapnel) {
+	tempHitBox := rl.NewRectangle(float32(sourceShrapnel.Position_x), float32(sourceShrapnel.Position_y), GLOBAL_TILE_SIZE, GLOBAL_TILE_SIZE)
+	for i := range game.Players {
+		if rl.CheckCollisionRecs(tempHitBox, game.Players[i].HitBox) {
+			game.PlayerDeath(&game.Players[i])
+		}
+	}
+}
+
+func (game *Game) PlayerDeath(player *Player) {
+	player.Status = false
+}
 
 func (game *Game) PlaceShrapnel(owner *Player, position_x, position_y int32) {
 	//TODO check if shrapnel is already placed here
@@ -318,6 +343,7 @@ func (game *Game) IsShrapnelPlacedHere(position_x, position_y int32) bool {
 func (game *Game) Update() {
 	game.Ticks++
 	game.UpdateBombs()
+	game.UpdateShrapnels()
 
 }
 
@@ -354,7 +380,9 @@ func (gfx *Gfx) DrawBoard(game *Game) {
 
 func (gfx *Gfx) DrawPlayers(game *Game) {
 	for _, v := range game.Players {
-		rl.DrawRectangleRec(v.HitBox, rl.Beige)
+		if v.Status {
+			rl.DrawRectangleRec(v.HitBox, rl.Beige)
+		}
 		//rl.DrawRectangle(int32(v.Position.X)*gfx.Tile_size, int32(v.Position.Y)*gfx.Tile_size, gfx.Tile_size, gfx.Tile_size, rl.Red)
 	}
 }
@@ -374,9 +402,9 @@ func (gfx *Gfx) GenerateGameTexture(game *Game) {
 	rl.BeginTextureMode(gfx.Game_Texture)
 	rl.ClearBackground(rl.White)
 	gfx.DrawBoard(game)
-	gfx.DrawShrapnel(game)
 	gfx.DrawBombs(game)
 	gfx.DrawPlayers(game)
+	gfx.DrawShrapnel(game)
 	rl.EndTextureMode()
 
 }
