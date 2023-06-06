@@ -347,6 +347,20 @@ func (game *Game) Update() {
 
 }
 
+func (game *Game) GameShouldEnd() bool {
+	players_left := 0
+	for _, v := range game.Players {
+		if v.Status {
+			players_left++
+		}
+	}
+	if players_left < 1 {
+		return false
+	} else {
+		return true
+	}
+}
+
 type Gfx struct {
 	Size_x              int32
 	Size_y              int32
