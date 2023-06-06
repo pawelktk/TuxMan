@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"strings"
 	//	"log"
 
 	rl "github.com/gen2brain/raylib-go/raylib"
@@ -160,16 +161,29 @@ func (game *Game) AddPlayer(name string, position_x, position_y float32) {
 func (game *Game) GetNextPosition(player *Player, direction string, deltatime float32) rl.Vector2 {
 	var nextPosition rl.Vector2
 	nextPosition = player.Position
-	switch direction {
-	case "up":
-		nextPosition.Y += player.Speed * deltatime
-	case "down":
-		nextPosition.Y -= player.Speed * deltatime
-	case "left":
-		nextPosition.X -= player.Speed * deltatime
-	case "right":
-		nextPosition.X += player.Speed * deltatime
+
+	direction_list := strings.Split(direction, "-")
+
+	// diagonal movement is √2 faster
+	movementVector := player.Speed * deltatime
+	if len(direction_list) > 1 {
+		movementVector /= 1.414213562
+
 	}
+	for _, v := range direction_list {
+		switch v {
+		case "up":
+			nextPosition.Y += movementVector
+		case "down":
+			nextPosition.Y -= movementVector
+		case "left":
+			nextPosition.X -= movementVector
+		case "right":
+			nextPosition.X += movementVector
+
+		}
+	}
+
 	return nextPosition
 }
 
@@ -454,8 +468,18 @@ func (gfx *Gfx) IsPlayer1BombKeyPressed() bool {
 func (gfx *Gfx) GetPlayer1Key() (string, bool) {
 	switch {
 	case rl.IsKeyDown(rl.KeyLeft):
+		if rl.IsKeyDown(rl.KeyUp) {
+			return "left-up", true
+		} else if rl.IsKeyDown(rl.KeyDown) {
+			return "left-down", true
+		}
 		return "left", true
 	case rl.IsKeyDown(rl.KeyRight):
+		if rl.IsKeyDown(rl.KeyUp) {
+			return "right-up", true
+		} else if rl.IsKeyDown(rl.KeyDown) {
+			return "right-down", true
+		}
 		return "right", true
 	case rl.IsKeyDown(rl.KeyUp):
 		return "up", true
