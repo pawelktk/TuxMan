@@ -257,9 +257,35 @@ func (game *Game) ExplodeBomb(bomb_index int) {
 }
 
 func (game *Game) GenerateShrapnel(sourceBomb *Bomb) {
+	//TODO make it break stuff
 	NewShrapnel(sourceBomb.Owner, sourceBomb.Position_x, sourceBomb.Position_y)
 	var up_blocked, down_blocked, left_blocked, right_blocked bool
-	for i := 1; i <= int(sourceBomb.Radius); i++ {
+	for i := GLOBAL_TILE_SIZE; i <= int(sourceBomb.Radius); i += GLOBAL_TILE_SIZE {
+		nextpos_x_right := int(sourceBomb.Position_x) + i
+		nextpos_x_left := int(sourceBomb.Position_x) - i
+
+		nextpos_y_up := int(sourceBomb.Position_y) + i
+		nextpos_y_down := int(sourceBomb.Position_y) - i
+
+		up_blocked = nextpos_y_up > int(game.GameBoard.Size_y)
+		down_blocked = nextpos_y_down < 0
+		right_blocked = nextpos_x_right > int(game.GameBoard.Size_x)
+		left_blocked = nextpos_x_left < 0
+
+		//TODO block at obstacles
+
+		if !up_blocked {
+			NewShrapnel(sourceBomb.Owner, sourceBomb.Position_x, int32(nextpos_y_up))
+		}
+		if !down_blocked {
+			NewShrapnel(sourceBomb.Owner, sourceBomb.Position_x, int32(nextpos_y_down))
+		}
+		if !left_blocked {
+			NewShrapnel(sourceBomb.Owner, int32(nextpos_x_left), sourceBomb.Position_y)
+		}
+		if !right_blocked {
+			NewShrapnel(sourceBomb.Owner, int32(nextpos_x_right), sourceBomb.Position_y)
+		}
 
 	}
 }
@@ -272,6 +298,8 @@ func (game *Game) UpdateBombs() {
 		}
 	}
 }
+
+//TODO update shrapnel
 
 func (game *Game) Update() {
 	game.Ticks++
