@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"log"
+	"math/rand"
 	"os"
 	"strconv"
 	"strings"
@@ -280,7 +281,7 @@ func NewGame() Game {
 	game := Game{}
 	game.Ticks = 0
 	game.GameBoard = NewBoard(12, 6)
-	game.GameBoard.LoadFromFile("tuxman1.map")
+	game.GameBoard.LoadFromFile("tuxman16.map")
 
 	return game
 }
@@ -394,7 +395,7 @@ func (game *Game) MovePlayer(player *Player, direction string, deltatime float32
 	}
 }
 
-// TODO Check for multiple bombs on the same tile
+// DONE Check for multiple bombs on the same tile
 func (game *Game) PlaceBomb(sourcePlayer *Player, location rl.Vector2, radius int32) {
 	if !game.IsBombPlacedHere(RoundXtoY(location.X, GLOBAL_TILE_SIZE), RoundXtoY(location.Y, GLOBAL_TILE_SIZE)) {
 
@@ -570,6 +571,7 @@ type Gfx struct {
 	Game_Texture        rl.RenderTexture2D
 	Game_Texture_Size_x int32
 	Game_Texture_Size_y int32
+	SpriteSheet         rl.Texture2D
 }
 
 const GLOBAL_TILE_SIZE = 20
@@ -580,6 +582,7 @@ func NewGfx(size_x, size_y int32) Gfx {
 	gfx.Size_y = size_y
 	gfx.Tile_size = GLOBAL_TILE_SIZE //= 30
 	rl.InitWindow(size_x, size_y, "TuxMan")
+	gfx.SpriteSheet = rl.LoadTexture("spritesheet.png")
 	//defer rl.CloseWindow()
 	rl.SetTargetFPS(30)
 	return gfx
@@ -595,11 +598,19 @@ func (gfx *Gfx) DrawBoard(game *Game) {
 				}
 			}
 		}*/
-	/*
-	  for i:=0;i<game.GameBoard.Size_y;i++{
-	    for j:=0;j<game.G
-	  }*/
-	rl.DrawRectangle(0, 0, game.GameBoard.Size_x*gfx.Tile_size, game.GameBoard.Size_y*gfx.Tile_size, rl.Gray)
+	rand.Seed(int64(game.GameBoard.Size_x + game.GameBoard.Size_y))
+	for i := 0; i < int(game.GameBoard.Size_y); i++ {
+		for j := 0; j < int(game.GameBoard.Size_x); j++ {
+			if rand.Float32() > 0.8 {
+				gfx.DrawStaticTexture("tile_blank", int32(j*GLOBAL_TILE_SIZE), int32(i*GLOBAL_TILE_SIZE))
+			} else {
+				gfx.DrawStaticTexture("tile_grass", int32(j*GLOBAL_TILE_SIZE), int32(i*GLOBAL_TILE_SIZE))
+
+			}
+
+		}
+	}
+	//rl.DrawRectangle(0, 0, game.GameBoard.Size_x*gfx.Tile_size, game.GameBoard.Size_y*gfx.Tile_size, rl.Gray)
 
 }
 
@@ -623,7 +634,14 @@ func (gfx *Gfx) DrawPlayers(game *Game) {
 
 func (gfx *Gfx) DrawBombs(game *Game) {
 	for _, v := range game.Bombs {
-		rl.DrawRectangle(v.Position_x, v.Position_y, GLOBAL_TILE_SIZE, GLOBAL_TILE_SIZE, rl.Red)
+		//rl.DrawRectangle(v.Position_x, v.Position_y, GLOBAL_TILE_SIZE, GLOBAL_TILE_SIZE, rl.Red)
+		//rl.DrawTextureRec(gfx.SpriteSheet, gfx.GetTextureRec("bomb"), rl.NewVector2(float32(v.Position_x), float32(v.Position_y)), rl.White)
+
+		/*
+			destRect := rl.NewRectangle(float32(v.Position_x), float32(v.Position_y), GLOBAL_TILE_SIZE, GLOBAL_TILE_SIZE)
+			rl.DrawTexturePro(gfx.SpriteSheet, gfx.GetTextureRec("bomb"), destRect, rl.NewVector2(GLOBAL_TILE_SIZE, GLOBAL_TILE_SIZE), 180, rl.White)
+		*/
+		gfx.DrawStaticTexture("bomb", v.Position_x, v.Position_y)
 	}
 }
 func (gfx *Gfx) DrawShrapnel(game *Game) {
@@ -631,6 +649,12 @@ func (gfx *Gfx) DrawShrapnel(game *Game) {
 		rl.DrawRectangle(v.Position_x, v.Position_y, GLOBAL_TILE_SIZE, GLOBAL_TILE_SIZE, rl.Orange)
 	}
 }
+
+func (gfx *Gfx) DrawStaticTexture(texture_name string, position_x, position_y int32) {
+	destRect := rl.NewRectangle(float32(position_x), float32(position_y), GLOBAL_TILE_SIZE, GLOBAL_TILE_SIZE)
+	rl.DrawTexturePro(gfx.SpriteSheet, gfx.GetTextureRec(texture_name), destRect, rl.NewVector2(GLOBAL_TILE_SIZE, GLOBAL_TILE_SIZE), 180, rl.White)
+}
+
 func (gfx *Gfx) GenerateGameTexture(game *Game) {
 	//TODO check for texture init
 	rl.BeginTextureMode(gfx.Game_Texture)
@@ -742,6 +766,25 @@ func (gfx *Gfx) GetPlayer2Key() (string, bool) {
 	default:
 		return "", false
 	}
+}
+
+func (gfx *Gfx) GetTextureRec(texture_name string) rl.Rectangle {
+	var x, y float32
+	switch texture_name {
+	case "bomb":
+		x = 4
+		y = 2
+	case "tile_blank":
+		x = 0
+		y = 0
+	case "tile_grass":
+		x = 1
+		y = 0
+	default:
+		x = 0
+		y = 0
+	}
+	return rl.NewRectangle(x*16, y*16, 16, 16)
 }
 
 func (gfx *Gfx) InitGameTextureBox(game *Game) {
