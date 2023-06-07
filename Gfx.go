@@ -17,20 +17,23 @@ type Gfx struct {
 	AnimatePlayer               [4]bool
 	PlayerAnimationFrameCounter int32
 	PlayerAnimationCurrentFrame int32
+	Shader                      rl.Shader
 }
 
-const GLOBAL_TILE_SIZE = 30
+const GLOBAL_TILE_SIZE = 40
 
 func NewGfx(size_x, size_y int32) Gfx {
 	gfx := Gfx{}
 	gfx.Size_x = size_x
 	gfx.Size_y = size_y
 	gfx.Tile_size = GLOBAL_TILE_SIZE //= 30
+
 	gfx.PlayerAnimationFrameCounter = 0
 	rl.InitWindow(size_x, size_y, "TuxMan")
 	gfx.SpriteSheet = rl.LoadTexture("spritesheet.png")
 	//defer rl.CloseWindow()
 	rl.SetTargetFPS(30)
+	//gfx.Shader = rl.LoadShader("", "scanline.fs")
 	return gfx
 }
 func (gfx *Gfx) DrawBoard(game *Game) {
@@ -63,7 +66,8 @@ func (gfx *Gfx) DrawBoard(game *Game) {
 func (gfx *Gfx) DrawObstacles(game *Game) {
 	for _, v := range game.GameBoard.Obstacles {
 		if v.ObstacleType == Wall {
-			rl.DrawRectangleRec(v.HitBox, rl.Black)
+			//rl.DrawRectangleRec(v.HitBox, rl.Black)
+			gfx.DrawStaticTexture("boulder", int32(v.HitBox.X), int32(v.HitBox.Y))
 		} else if v.ObstacleType == Breakable {
 			//rl.DrawRectangleRec(v.HitBox, rl.Brown)
 			gfx.DrawStaticTexture("bush", int32(v.HitBox.X), int32(v.HitBox.Y))
@@ -131,7 +135,8 @@ func (gfx *Gfx) DrawBombs(game *Game) {
 }
 func (gfx *Gfx) DrawShrapnel(game *Game) {
 	for _, v := range game.Shrapnels {
-		rl.DrawRectangle(v.Position_x, v.Position_y, GLOBAL_TILE_SIZE, GLOBAL_TILE_SIZE, rl.Orange)
+		//rl.DrawRectangle(v.Position_x, v.Position_y, GLOBAL_TILE_SIZE, GLOBAL_TILE_SIZE, rl.Orange)
+		gfx.DrawStaticTexture("shrapnel", v.Position_x, v.Position_y)
 	}
 }
 
@@ -279,6 +284,13 @@ func (gfx *Gfx) GetTextureRec(texture_name string) rl.Rectangle {
 	case "bush":
 		x = 3
 		y = 0
+	case "boulder":
+		x = 6
+		y = 3
+
+	case "shrapnel":
+		x = 7
+		y = 5
 
 	case "player1_0":
 		x = 1

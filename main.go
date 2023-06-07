@@ -24,7 +24,7 @@ func GameScreen(gfx *Gfx, game *Game) {
 func main() {
 	//rl.SetConfigFlags(rl.FlagWindowResizable)
 	game := NewGame()
-	gfx := NewGfx(600, 600)
+	gfx := NewGfx(int32(1920*0.7), int32(1080*0.7))
 	gfx.InitGameTextureBox(&game)
 	game.AddPlayer("Pablo", 0, 1)
 	game.AddPlayer("SecondPlayer", GLOBAL_TILE_SIZE*float32(game.GameBoard.Size_x-1), 1)
@@ -40,11 +40,13 @@ func main() {
 
 		gameOver, winner := game.GameShouldEnd()
 		rl.BeginDrawing()
+		//rl.BeginShaderMode(gfx.Shader)
 		if gameOver {
 			GameOverScreen(&gfx, &game, winner)
 		} else {
 			GameScreen(&gfx, &game)
 		}
+		//rl.EndShaderMode()
 		rl.EndDrawing()
 	}
 }
