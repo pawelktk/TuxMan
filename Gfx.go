@@ -136,7 +136,13 @@ func (gfx *Gfx) DrawBombs(game *Game) {
 func (gfx *Gfx) DrawShrapnel(game *Game) {
 	for _, v := range game.Shrapnels {
 		//rl.DrawRectangle(v.Position_x, v.Position_y, GLOBAL_TILE_SIZE, GLOBAL_TILE_SIZE, rl.Orange)
-		gfx.DrawStaticTexture("shrapnel", v.Position_x, v.Position_y)
+		if v.RemainingTicks <= 4 {
+			gfx.DrawStaticTexture("shrapnel", v.Position_x, v.Position_y)
+		} else if v.RemainingTicks <= 7 {
+			gfx.DrawStaticTexture("shrapnel_medium", v.Position_x, v.Position_y)
+		} else {
+			gfx.DrawStaticTexture("shrapnel_small", v.Position_x, v.Position_y)
+		}
 	}
 }
 
@@ -288,6 +294,13 @@ func (gfx *Gfx) GetTextureRec(texture_name string) rl.Rectangle {
 		x = 6
 		y = 3
 
+	case "shrapnel_small":
+		x = 7
+		y = 3
+
+	case "shrapnel_medium":
+		x = 7
+		y = 4
 	case "shrapnel":
 		x = 7
 		y = 5
