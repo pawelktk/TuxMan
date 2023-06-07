@@ -130,7 +130,14 @@ func (gfx *Gfx) DrawBombs(game *Game) {
 			destRect := rl.NewRectangle(float32(v.Position_x), float32(v.Position_y), GLOBAL_TILE_SIZE, GLOBAL_TILE_SIZE)
 			rl.DrawTexturePro(gfx.SpriteSheet, gfx.GetTextureRec("bomb"), destRect, rl.NewVector2(GLOBAL_TILE_SIZE, GLOBAL_TILE_SIZE), 180, rl.White)
 		*/
-		gfx.DrawStaticTexture("bomb", v.Position_x, v.Position_y)
+		if v.RemainingTicks <= 20 {
+			gfx.DrawStaticTexture("bomb_end", v.Position_x, v.Position_y)
+		} else if v.RemainingTicks <= 40 {
+			gfx.DrawStaticTexture("bomb_mid", v.Position_x, v.Position_y)
+		} else {
+
+			gfx.DrawStaticTexture("bomb", v.Position_x, v.Position_y)
+		}
 	}
 }
 func (gfx *Gfx) DrawShrapnel(game *Game) {
@@ -281,6 +288,13 @@ func (gfx *Gfx) GetTextureRec(texture_name string) rl.Rectangle {
 	case "bomb":
 		x = 4
 		y = 2
+	case "bomb_mid":
+		x = 4
+		y = 3
+	case "bomb_end":
+		x = 4
+		y = 4
+
 	case "tile_blank":
 		x = 0
 		y = 0
