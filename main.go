@@ -1,50 +1,43 @@
 package main
 
 import (
-	"fmt"
 	rl "github.com/gen2brain/raylib-go/raylib"
+	"github.com/pawelktk/TuxMan/audio"
+	"github.com/pawelktk/TuxMan/game"
+	"github.com/pawelktk/TuxMan/gfx"
+	"github.com/pawelktk/TuxMan/globals"
+	"github.com/pawelktk/TuxMan/screens"
 )
-
-func GameOverScreen(gfx *Gfx, game *Game, winner *Player) {
-	rl.ClearBackground(rl.RayWhite)
-	gfx.DrawTextOnScreenPart("Game Over!", 50, 0.5, 0.3)
-	gfx.DrawTextOnScreenPart("Winner: "+winner.Name, 40, 0.5, 0.4)
-	gfx.DrawTextOnScreenPart("Kills: "+fmt.Sprint(winner.Points), 40, 0.5, 0.5)
-
-}
-
-func GameScreen(gfx *Gfx, game *Game) {
-	rl.ClearBackground(rl.RayWhite)
-	gfx.DrawTextCenterX("TuxMan", 40, 10)
-
-	texturePosition := rl.NewVector2(float32((gfx.Size_x-gfx.Game_Texture_Size_x)/2), 60)
-	rl.DrawTextureEx(gfx.Game_Texture.Texture, texturePosition, 0, 1, rl.White)
-}
 
 func main() {
 	//rl.SetConfigFlags(rl.FlagWindowResizable)
-	game := NewGame()
-	gfx := NewGfx(int32(1920*0.7), int32(1080*0.7))
-	gfx.InitGameTextureBox(&game)
-	game.AddPlayer("Pablo", 0, 1)
-	game.AddPlayer("SecondPlayer", GLOBAL_TILE_SIZE*float32(game.GameBoard.Size_x-1), 1)
+	currentGame := game.NewGame()
+	gameWindow := gfx.NewGfx(int32(1920*0.7), int32(1080*0.7))
+	audio.InitAudio()
+	gameWindow.InitGameTextureBox(&currentGame)
+	currentGame.AddPlayer("Pablo", 0, 1)
+	currentGame.AddPlayer("SecondPlayer", globals.GLOBAL_TILE_SIZE*float32(currentGame.GameBoard.Size_x-1), 1)
 
-	//game.GameBoard.AddObstacle(4, 1, Wall)
-	//game.GameBoard.AddObstacle(2, 2, Breakable)
-
+	mainMenuScreen := screens.NewMainMenuScreen()
+	screen := "NOT_main_menu" //TODO finish main menu
+	//currentGame.GameBoard.AddObstacle(4, 1, Wall)
+	//currentGame.GameBoard.AddObstacle(2, 2, Breakable)
+	go audio.MainAudioLoop()
 	for !rl.WindowShouldClose() {
-		gfx.HandleInput(&game, rl.GetFrameTime())
-		game.Update()
+		gameWindow.HandleInput(&currentGame, rl.GetFrameTime())
+		currentGame.Update()
 
-		gfx.GenerateGameTexture(&game)
+		gameWindow.GenerateGameTexture(&currentGame)
 
-		gameOver, winner := game.GameShouldEnd()
+		gameOver, winner := currentGame.GameShouldEnd()
 		rl.BeginDrawing()
 		//rl.BeginShaderMode(gfx.Shader)
 		if gameOver {
-			GameOverScreen(&gfx, &game, winner)
+			screens.GameOverScreen(&gameWindow, &currentGame, winner)
+		} else if screen == "main_menu" {
+			mainMenuScreen.Display(&gameWindow)
 		} else {
-			GameScreen(&gfx, &game)
+			screens.GameScreen(&gameWindow, &currentGame)
 		}
 		//rl.EndShaderMode()
 		rl.EndDrawing()

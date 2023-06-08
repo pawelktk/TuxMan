@@ -1,4 +1,4 @@
-module TuxMan
+module github.com/pawelktk/TuxMan
 
 go 1.20
 
