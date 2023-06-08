@@ -290,15 +290,20 @@ func (game *Game) Update() {
 
 func (game *Game) GameShouldEnd() (bool, *Player) {
 	players_left := 0
-	winner := &game.Players[0]
+	var winner *Player //&game.Players[0]
+	winner = nil
 	for i, v := range game.Players {
 		if v.Status {
 			players_left++
 			winner = &game.Players[i]
 		}
 	}
-	if players_left <= 1 {
+	if players_left <= 1 && len(game.Players) > 0 {
+		if players_left == 0 {
+			winner = &game.Players[0]
+		}
 		return true, winner
+
 	} else {
 		return false, nil
 	}

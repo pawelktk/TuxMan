@@ -96,31 +96,17 @@ func (gfx *Gfx) DrawPlayers(currentGame *game.Game) {
 	gfx.UpdatePlayerFrameCounter()
 	for i, v := range currentGame.Players {
 		if v.Status {
-			if i == 0 {
-				if gfx.AnimatePlayer[i] == true {
-					if gfx.PlayerAnimationCurrentFrame == 0 {
-						gfx.DrawDynamicTexture("player1_1", v.Position.X, v.Position.Y)
 
-					} else {
-						gfx.DrawDynamicTexture("player1_2", v.Position.X, v.Position.Y)
+			if gfx.AnimatePlayer[i] == true {
+				if gfx.PlayerAnimationCurrentFrame == 0 {
+					gfx.DrawDynamicTexture("player"+fmt.Sprint(i+1)+"_1", v.Position.X, v.Position.Y)
 
-					}
 				} else {
-					gfx.DrawDynamicTexture("player1_0", v.Position.X, v.Position.Y)
-				}
-			} else if i == 1 {
-				//rl.DrawRectangleRec(v.HitBox, rl.Beige)
-				if gfx.AnimatePlayer[i] == true {
-					if gfx.PlayerAnimationCurrentFrame == 0 {
-						gfx.DrawDynamicTexture("player2_1", v.Position.X, v.Position.Y)
+					gfx.DrawDynamicTexture("player"+fmt.Sprint(i+1)+"_2", v.Position.X, v.Position.Y)
 
-					} else {
-						gfx.DrawDynamicTexture("player2_2", v.Position.X, v.Position.Y)
-
-					}
-				} else {
-					gfx.DrawDynamicTexture("player2_0", v.Position.X, v.Position.Y)
 				}
+			} else {
+				gfx.DrawDynamicTexture("player"+fmt.Sprint(i+1)+"_0", v.Position.X, v.Position.Y)
 			}
 		}
 		//rl.DrawRectangle(int32(v.Position.X)*gfx.Tile_size, int32(v.Position.Y)*gfx.Tile_size, gfx.Tile_size, gfx.Tile_size, rl.Red)
@@ -217,6 +203,23 @@ func (gfx *Gfx) HandleInput(currentGame *game.Game, deltatime float32) {
 		}
 
 	}
+	if len(currentGame.Players) > 2 {
+		player3Key, player3KeyIsPressed := gfx.GetPlayer3Key()
+
+		if gfx.IsPlayer3BombKeyPressed() && currentGame.Players[2].AvailableBombs > 0 {
+			currentGame.PlaceBomb(&currentGame.Players[2], currentGame.Players[2].Position, 3)
+		}
+
+		if player3KeyIsPressed && !playerAlreadyChecked[2] {
+			playerAlreadyChecked[2] = true
+			currentGame.MovePlayer(&currentGame.Players[2], player3Key, deltatime)
+			fmt.Println("Key pressed: ", player3Key)
+			gfx.AnimatePlayer[2] = true
+		} else {
+			gfx.AnimatePlayer[2] = false
+		}
+
+	}
 }
 
 // DONE Make placing bombs and movement more responsive
@@ -287,6 +290,39 @@ func (gfx *Gfx) GetPlayer2Key() (string, bool) {
 	}
 }
 
+func (gfx *Gfx) IsPlayer3BombKeyPressed() bool {
+	if rl.IsKeyPressed(rl.KeyV) {
+		return true
+	} else {
+		return false
+	}
+}
+
+func (gfx *Gfx) GetPlayer3Key() (string, bool) {
+	switch {
+	case rl.IsKeyDown(rl.KeyG):
+		if rl.IsKeyDown(rl.KeyY) {
+			return "left-up", true
+		} else if rl.IsKeyDown(rl.KeyH) {
+			return "left-down", true
+		}
+		return "left", true
+	case rl.IsKeyDown(rl.KeyJ):
+		if rl.IsKeyDown(rl.KeyY) {
+			return "right-up", true
+		} else if rl.IsKeyDown(rl.KeyH) {
+			return "right-down", true
+		}
+		return "right", true
+	case rl.IsKeyDown(rl.KeyY):
+		return "up", true
+	case rl.IsKeyDown(rl.KeyH):
+		return "down", true
+	default:
+		return "", false
+	}
+}
+
 func (gfx *Gfx) GetTextureRec(texture_name string) rl.Rectangle {
 	var x, y float32
 	switch texture_name {
@@ -343,6 +379,16 @@ func (gfx *Gfx) GetTextureRec(texture_name string) rl.Rectangle {
 	case "player2_2":
 		x = 3
 		y = 2
+
+	case "player3_0":
+		x = 1
+		y = 3
+	case "player3_1":
+		x = 2
+		y = 3
+	case "player3_2":
+		x = 3
+		y = 3
 
 	default:
 		x = 0
