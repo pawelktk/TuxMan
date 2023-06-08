@@ -1,20 +1,17 @@
 package audio
 
 import (
-	"time"
-
 	rl "github.com/gen2brain/raylib-go/raylib"
 )
 
 var Sounds map[string]rl.Sound
 
-func MainAudioLoop() {
-	for {
-		if !rl.IsSoundPlaying(Sounds["music_default"]) {
-			rl.PlaySound(Sounds["music_default"])
-			time.Sleep(time.Second * 27)
-		}
+func MainAudio() {
+
+	if !rl.IsSoundPlaying(Sounds["music_default"]) {
+		rl.PlaySound(Sounds["music_default"])
 	}
+
 }
 
 func InitAudio() {

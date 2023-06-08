@@ -22,8 +22,8 @@ func main() {
 	screen := "NOT_main_menu" //TODO finish main menu
 	//currentGame.GameBoard.AddObstacle(4, 1, Wall)
 	//currentGame.GameBoard.AddObstacle(2, 2, Breakable)
-	go audio.MainAudioLoop()
 	for !rl.WindowShouldClose() {
+		audio.MainAudio()
 		gameWindow.HandleInput(&currentGame, rl.GetFrameTime())
 		currentGame.Update()
 

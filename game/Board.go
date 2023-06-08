@@ -7,6 +7,7 @@ import (
 	"math/rand"
 	"os"
 	"strconv"
+	"sync"
 	"time"
 
 	"github.com/pawelktk/TuxMan/globals"
@@ -108,24 +109,43 @@ func (board *Board) GenerateRandom15x15Map() {
 	board.Size_y = 15
 	generatorSource := rand.NewSource(time.Now().UnixNano())
 	generator := rand.New(generatorSource)
-	for i := 0; i < 15-2; i += 3 {
-		for j := 0; j < 15-2; j += 3 {
-			for k := 0; k < 2; k++ {
-				x := i + generator.Intn(3)
-				y := j + generator.Intn(3)
-				if !board.ObstacleExist(NewVector2int32(int32(x), int32(y))) && !((x < 3 && y < 3) || (x < 3 && y > 15-4) || (x > 15-4 && y < 3) || (x > 15-4 && y > 15-4)) {
-					board.AddObstacle(int32(x), int32(y), Wall)
+	var wg sync.WaitGroup
+	mapMutex := sync.RWMutex{}
+	for i0 := 0; i0 < 15-2; i0 += 3 {
+		for j0 := 0; j0 < 15-2; j0 += 3 {
+			wg.Add(1)
+			go func(i, j int) {
+				defer wg.Done()
+				for k := 0; k < 2; k++ {
+					x := i + generator.Intn(3)
+					y := j + generator.Intn(3)
+					mapMutex.Lock()
+					obstacleAlreadyPlaced := board.ObstacleExist(NewVector2int32(int32(x), int32(y)))
+					mapMutex.Unlock()
+
+					if !obstacleAlreadyPlaced && !((x < 3 && y < 3) || (x < 3 && y > 15-4) || (x > 15-4 && y < 3) || (x > 15-4 && y > 15-4)) {
+						mapMutex.Lock()
+						board.AddObstacle(int32(x), int32(y), Wall)
+						mapMutex.Unlock()
+					}
 				}
-			}
-			for k := 0; k < 5; k++ {
-				x := i + generator.Intn(3)
-				y := j + generator.Intn(3)
-				if !board.ObstacleExist(NewVector2int32(int32(x), int32(y))) && !((x < 3 && y < 3) || (x < 3 && y > 15-4) || (x > 15-4 && y < 3) || (x > 15-4 && y > 15-4)) {
-					board.AddObstacle(int32(x), int32(y), Breakable)
+				for k := 0; k < 5; k++ {
+					x := i + generator.Intn(3)
+					y := j + generator.Intn(3)
+					mapMutex.Lock()
+					obstacleAlreadyPlaced := board.ObstacleExist(NewVector2int32(int32(x), int32(y)))
+					mapMutex.Unlock()
+
+					if !obstacleAlreadyPlaced && !((x < 3 && y < 3) || (x < 3 && y > 15-4) || (x > 15-4 && y < 3) || (x > 15-4 && y > 15-4)) {
+						mapMutex.Lock()
+						board.AddObstacle(int32(x), int32(y), Breakable)
+						mapMutex.Unlock()
+					}
 				}
-			}
+			}(i0, j0)
 		}
 	}
+	wg.Wait()
 
 }
 
