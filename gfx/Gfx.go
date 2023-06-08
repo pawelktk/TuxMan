@@ -9,6 +9,9 @@ import (
 	"github.com/pawelktk/TuxMan/globals"
 )
 
+var ScreenWidth int32
+var ScreenHeight int32
+
 type Gfx struct {
 	Size_x                      int32
 	Size_y                      int32
@@ -27,6 +30,8 @@ func NewGfx(size_x, size_y int32) Gfx {
 	gfx := Gfx{}
 	gfx.Size_x = size_x
 	gfx.Size_y = size_y
+	ScreenWidth = size_x
+	ScreenHeight = size_y
 	gfx.Tile_size = globals.GLOBAL_TILE_SIZE //= 30
 
 	gfx.PlayerAnimationFrameCounter = 0

@@ -18,13 +18,16 @@ func main() {
 	currentGame.AddPlayer("Pablo", 0, 1)
 	currentGame.AddPlayer("SecondPlayer", globals.GLOBAL_TILE_SIZE*float32(currentGame.GameBoard.Size_x-1), 1)
 
-	mainMenuScreen := screens.NewMainMenuScreen()
-	screen := "NOT_main_menu" //TODO finish main menu
+	screen := "main_menu"
 	//currentGame.GameBoard.AddObstacle(4, 1, Wall)
 	//currentGame.GameBoard.AddObstacle(2, 2, Breakable)
 	for !rl.WindowShouldClose() {
 		audio.MainAudio()
-		gameWindow.HandleInput(&currentGame, rl.GetFrameTime())
+		if screen == "main_menu" {
+			screens.MainMenuHandleInput(&gameWindow)
+		} else {
+			gameWindow.HandleInput(&currentGame, rl.GetFrameTime())
+		}
 		currentGame.Update()
 
 		gameWindow.GenerateGameTexture(&currentGame)
@@ -35,7 +38,16 @@ func main() {
 		if gameOver {
 			screens.GameOverScreen(&gameWindow, &currentGame, winner)
 		} else if screen == "main_menu" {
-			mainMenuScreen.Display(&gameWindow)
+			switch screens.SelectedMenuOption {
+			case 0:
+				screen = "game"
+			case 1:
+				rl.CloseWindow()
+				return
+			default:
+				screens.MainMenuScreen(&gameWindow)
+			}
+
 		} else {
 			screens.GameScreen(&gameWindow, &currentGame)
 		}
