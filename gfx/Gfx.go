@@ -155,6 +155,10 @@ func (gfx *Gfx) DrawDynamicTexture(texture_name string, position_x, position_y f
 	rl.DrawTexturePro(gfx.SpriteSheet, gfx.GetTextureRec(texture_name), destRect, rl.NewVector2(globals.GLOBAL_TILE_SIZE*1.0, globals.GLOBAL_TILE_SIZE*1.0), 180, rl.White)
 }
 
+func (gfx *Gfx) DrawTexture(texture_name string, position_x, position_y int32, dest_size float32) {
+	destRect := rl.NewRectangle(float32(position_x), float32(position_y), dest_size, dest_size)
+	rl.DrawTexturePro(gfx.SpriteSheet, gfx.GetTextureRec(texture_name), destRect, rl.NewVector2(0, 0), 0, rl.White)
+}
 func (gfx *Gfx) GenerateGameTexture(currentGame *game.Game) {
 	//TODO check for texture init
 	rl.BeginTextureMode(gfx.Game_Texture)

@@ -23,6 +23,11 @@ func main() {
 		audio.MainAudio()
 		if screen == "main_menu" {
 			screens.MenuHandleInput(&gameWindow, screens.OptionsCount_MainMenu)
+		} else if screen == "game_init" {
+			screens.MenuHandleInput(&gameWindow, screens.SelectedPlayerCount)
+			if screens.EnteredKey != -1 {
+				screens.UpdatePlayerName(&currentGame)
+			}
 		} else {
 			gameWindow.HandleInput(&currentGame, rl.GetFrameTime())
 		}
@@ -39,16 +44,16 @@ func main() {
 			switch screens.SelectedMenuOption {
 			case 0:
 				if screens.SelectedPlayerCount > 0 {
-					currentGame.AddPlayer("First Player", 0, 1)
+					currentGame.AddPlayer("PLAYER1", 0, 1)
 				}
 				if screens.SelectedPlayerCount > 1 {
-					currentGame.AddPlayer("Second Player", globals.GLOBAL_TILE_SIZE*float32(currentGame.GameBoard.Size_x-1), 1)
+					currentGame.AddPlayer("PLAYER2", globals.GLOBAL_TILE_SIZE*float32(currentGame.GameBoard.Size_x-1), 1)
 				}
 				if screens.SelectedPlayerCount > 2 {
-					currentGame.AddPlayer("Third Player", 1, globals.GLOBAL_TILE_SIZE*float32(currentGame.GameBoard.Size_x-1))
+					currentGame.AddPlayer("PLAYER3", 1, globals.GLOBAL_TILE_SIZE*float32(currentGame.GameBoard.Size_x-1))
 				}
 
-				screen = "game"
+				screen = "game_init"
 			case 1:
 				screens.SelectedPlayerCount = screens.SelectedPlayerCount + 1
 				if screens.SelectedPlayerCount > globals.MAX_PLAYERS {
@@ -65,7 +70,11 @@ func main() {
 		} else if screen == "game" {
 			screens.GameScreen(&gameWindow, &currentGame)
 		} else if screen == "game_init" {
-			screens.GameInitMenuScreen(&gameWindow)
+			if screens.SelectedMenuOption == -1 {
+				screens.GameInitMenuScreen(&gameWindow, &currentGame)
+			} else {
+				screen = "game"
+			}
 		}
 		//rl.EndShaderMode()
 		rl.EndDrawing()
