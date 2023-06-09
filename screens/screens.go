@@ -2,7 +2,6 @@ package screens
 
 import (
 	"fmt"
-	"math"
 
 	rl "github.com/gen2brain/raylib-go/raylib"
 	"github.com/pawelktk/TuxMan/game"
@@ -48,7 +47,10 @@ func MenuHandleInput(gameWindow *gfx.Gfx, optionsCount int) {
 	case rl.KeyUp:
 		//	fallthrough
 		//case rl.KeyW:
-		HighlightedMenuOption = int(math.Abs(float64(HighlightedMenuOption-1))) % optionsCount
+		HighlightedMenuOption = HighlightedMenuOption - 1
+		if HighlightedMenuOption < 0 {
+			HighlightedMenuOption = optionsCount - 1
+		}
 	case rl.KeySpace:
 		fallthrough
 	case rl.KeyEnter:

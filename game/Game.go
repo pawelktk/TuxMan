@@ -19,9 +19,9 @@ type Game struct {
 func NewGame() Game {
 	game := Game{}
 	game.Ticks = 0
-	game.GameBoard = NewBoard(15, 15)
+	game.GameBoard = NewRandomBoard(7, 5)
 	//game.GameBoard.LoadFromFile("tuxman16.map")
-	game.GameBoard.GenerateRandom15x15Map()
+	//game.GameBoard.GenerateRandomMap(5, 5)
 
 	return game
 }

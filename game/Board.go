@@ -40,7 +40,11 @@ func NewBoard(size_x, size_y int32) Board {
 	board.Clear()
 	return board
 }
-
+func NewRandomBoard(size_x3, size_y3 int32) Board {
+	board := NewBoard(size_x3*3, size_y3*3)
+	board.GenerateRandomMap(size_x3, size_y3)
+	return board
+}
 func (board *Board) Clear() {
 	for i := range board.board_matrix {
 		for j := range board.board_matrix[i] {
@@ -104,15 +108,63 @@ func (board *Board) LoadFromFile(fileName string) {
 	}
 }
 
-func (board *Board) GenerateRandom15x15Map() {
-	board.Size_x = 15
-	board.Size_y = 15
+/*
+	func (board *Board) GenerateRandom15x15Map() {
+		board.Size_x = 15
+		board.Size_y = 15
+		generatorSource := rand.NewSource(time.Now().UnixNano())
+		generator := rand.New(generatorSource)
+		var wg sync.WaitGroup
+		mapMutex := sync.RWMutex{}
+		for i0 := 0; i0 < 15-2; i0 += 3 {
+			for j0 := 0; j0 < 15-2; j0 += 3 {
+				wg.Add(1)
+				go func(i, j int) {
+					defer wg.Done()
+					for k := 0; k < 2; k++ {
+						x := i + generator.Intn(3)
+						y := j + generator.Intn(3)
+						mapMutex.Lock()
+						obstacleAlreadyPlaced := board.ObstacleExist(NewVector2int32(int32(x), int32(y)))
+						mapMutex.Unlock()
+
+						if !obstacleAlreadyPlaced && !((x < 3 && y < 3) || (x < 3 && y > 15-4) || (x > 15-4 && y < 3) || (x > 15-4 && y > 15-4)) {
+							mapMutex.Lock()
+							board.AddObstacle(int32(x), int32(y), Wall)
+							mapMutex.Unlock()
+						}
+					}
+					for k := 0; k < 5; k++ {
+						x := i + generator.Intn(3)
+						y := j + generator.Intn(3)
+						mapMutex.Lock()
+						obstacleAlreadyPlaced := board.ObstacleExist(NewVector2int32(int32(x), int32(y)))
+						mapMutex.Unlock()
+
+						if !obstacleAlreadyPlaced && !((x < 3 && y < 3) || (x < 3 && y > 15-4) || (x > 15-4 && y < 3) || (x > 15-4 && y > 15-4)) {
+							mapMutex.Lock()
+							board.AddObstacle(int32(x), int32(y), Breakable)
+							mapMutex.Unlock()
+						}
+					}
+				}(i0, j0)
+			}
+		}
+		wg.Wait()
+
+}
+*/
+func (board *Board) GenerateRandomMap(size_x3, size_y3 int32) {
+	size_x := size_x3 * 3
+	size_y := size_y3 * 3
+	board.Size_x = size_x
+	board.Size_y = size_y
 	generatorSource := rand.NewSource(time.Now().UnixNano())
 	generator := rand.New(generatorSource)
 	var wg sync.WaitGroup
 	mapMutex := sync.RWMutex{}
-	for i0 := 0; i0 < 15-2; i0 += 3 {
-		for j0 := 0; j0 < 15-2; j0 += 3 {
+	for i0 := 0; i0 < int(size_x)-2; i0 += 3 {
+		for j0 := 0; j0 < int(size_y)-2; j0 += 3 {
 			wg.Add(1)
 			go func(i, j int) {
 				defer wg.Done()
@@ -123,7 +175,7 @@ func (board *Board) GenerateRandom15x15Map() {
 					obstacleAlreadyPlaced := board.ObstacleExist(NewVector2int32(int32(x), int32(y)))
 					mapMutex.Unlock()
 
-					if !obstacleAlreadyPlaced && !((x < 3 && y < 3) || (x < 3 && y > 15-4) || (x > 15-4 && y < 3) || (x > 15-4 && y > 15-4)) {
+					if !obstacleAlreadyPlaced && !((x < 3 && y < 3) || (x < 3 && y > int(size_y)-4) || (x > int(size_x)-4 && y < 3) || (x > int(size_x)-4 && y > int(size_y)-4)) {
 						mapMutex.Lock()
 						board.AddObstacle(int32(x), int32(y), Wall)
 						mapMutex.Unlock()
@@ -136,7 +188,7 @@ func (board *Board) GenerateRandom15x15Map() {
 					obstacleAlreadyPlaced := board.ObstacleExist(NewVector2int32(int32(x), int32(y)))
 					mapMutex.Unlock()
 
-					if !obstacleAlreadyPlaced && !((x < 3 && y < 3) || (x < 3 && y > 15-4) || (x > 15-4 && y < 3) || (x > 15-4 && y > 15-4)) {
+					if !obstacleAlreadyPlaced && !((x < 3 && y < 3) || (x < 3 && y > int(size_y)-4) || (x > int(size_x)-4 && y < 3) || (x > int(size_x)-4 && y > int(size_y)-4)) {
 						mapMutex.Lock()
 						board.AddObstacle(int32(x), int32(y), Breakable)
 						mapMutex.Unlock()
@@ -148,7 +200,6 @@ func (board *Board) GenerateRandom15x15Map() {
 	wg.Wait()
 
 }
-
 func (board *Board) AddObstacle(position_x, position_y int32, tileType TileType) {
 	obstacle := NewObstacle(position_x, position_y, tileType)
 	board.Obstacles[NewVector2int32(position_x*globals.GLOBAL_TILE_SIZE, position_y*globals.GLOBAL_TILE_SIZE)] = obstacle
