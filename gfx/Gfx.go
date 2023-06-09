@@ -145,6 +145,15 @@ func (gfx *Gfx) DrawShrapnel(currentGame *game.Game) {
 	}
 }
 
+func (gfx *Gfx) DrawPowerUps(currentGame *game.Game) {
+	for _, v := range currentGame.PowerUps {
+		if v.BoostType == game.Speed {
+			gfx.DrawStaticTexture("powerup_speed", v.Position_x, v.Position_y)
+		} else {
+			gfx.DrawStaticTexture("powerup_blank", v.Position_x, v.Position_y)
+		}
+	}
+}
 func (gfx *Gfx) DrawStaticTexture(texture_name string, position_x, position_y int32) {
 	destRect := rl.NewRectangle(float32(position_x), float32(position_y), globals.GLOBAL_TILE_SIZE, globals.GLOBAL_TILE_SIZE)
 	rl.DrawTexturePro(gfx.SpriteSheet, gfx.GetTextureRec(texture_name), destRect, rl.NewVector2(globals.GLOBAL_TILE_SIZE, globals.GLOBAL_TILE_SIZE), 180, rl.White)
@@ -166,6 +175,7 @@ func (gfx *Gfx) GenerateGameTexture(currentGame *game.Game) {
 	gfx.DrawBoard(currentGame)
 	gfx.DrawObstacles(currentGame)
 	gfx.DrawBombs(currentGame)
+	gfx.DrawPowerUps(currentGame)
 	gfx.DrawPlayers(currentGame)
 	gfx.DrawShrapnel(currentGame)
 	rl.EndTextureMode()
@@ -393,6 +403,13 @@ func (gfx *Gfx) GetTextureRec(texture_name string) rl.Rectangle {
 	case "player3_2":
 		x = 3
 		y = 3
+
+	case "powerup_blank":
+		x = 8
+		y = 0
+	case "powerup_speed":
+		x = 8
+		y = 2
 
 	default:
 		x = 0

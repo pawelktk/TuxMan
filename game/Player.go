@@ -17,6 +17,7 @@ type Player struct {
 	Speed          float32
 	PlayerSize     float32
 	ID             int
+	SpeedBoost     int32
 }
 
 func NewPlayer(name string, position_x, position_y float32) Player {
@@ -30,6 +31,7 @@ func NewPlayer(name string, position_x, position_y float32) Player {
 	player.PlayerSize = globals.GLOBAL_TILE_SIZE - globals.GLOBAL_TILE_SIZE*0.2
 	player.HitBox = rl.NewRectangle(float32(position_x), float32(position_y), player.PlayerSize, player.PlayerSize)
 	player.Speed = 70
+	player.SpeedBoost = 0
 	player.ID = ID_Increment
 	ID_Increment++
 	return player

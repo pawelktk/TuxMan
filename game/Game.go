@@ -2,6 +2,7 @@ package game
 
 import (
 	"fmt"
+	"math/rand"
 	"strings"
 
 	rl "github.com/gen2brain/raylib-go/raylib"
@@ -14,6 +15,7 @@ type Game struct {
 	Players   []Player
 	Bombs     []Bomb
 	Shrapnels []Shrapnel
+	PowerUps  []PowerUp
 }
 
 func NewGame() Game {
@@ -37,7 +39,7 @@ func (game *Game) GetNextPosition(player *Player, direction string, deltatime fl
 	direction_list := strings.Split(direction, "-")
 
 	// diagonal movement is √2 faster
-	movementVector := player.Speed * deltatime
+	movementVector := player.Speed*deltatime + (player.Speed * globals.POWERUP_SPEED_BOOST * float32(player.SpeedBoost) * deltatime)
 	if len(direction_list) > 1 {
 		movementVector /= 1.414213562
 
@@ -107,20 +109,25 @@ func (game *Game) HitboxCollidesWithOtherPlayer(sourcePlayer *Player, hitbox rl.
 */
 
 func (game *Game) HitboxCollidesWithObstacle(hitbox rl.Rectangle) bool {
-	/*
-		//WARNING: PositionIsValid MUST be run first
-		positionTile := game.GameBoard.board_matrix[int(position.Y-GLOBAL_TILE_SIZE*0.2)/GLOBAL_TILE_SIZE][int(position.X)/GLOBAL_TILE_SIZE]
-		if positionTile == Wall || positionTile == Breakable {
-			return true
-		} else {
-			return false
-		}*/
 	for _, v := range game.GameBoard.Obstacles {
 		if rl.CheckCollisionRecs(hitbox, v.HitBox) {
 			return true
 		}
 	}
 	return false
+}
+func (game *Game) HandleCollisionWithWithPowerUp(sourcePlayer *Player, hitbox rl.Rectangle) {
+	for i, v := range game.PowerUps {
+		if rl.CheckCollisionRecs(hitbox, game.PowerUps[i].HitBox) {
+			fmt.Println("[[Player collided with PowerUp!]]")
+			if v.BoostType == Speed {
+
+				sourcePlayer.SpeedBoost++
+			}
+			game.RemovePowerUp(i)
+			return
+		}
+	}
 }
 
 func (game *Game) MovePlayer(player *Player, direction string, deltatime float32) {
@@ -131,6 +138,7 @@ func (game *Game) MovePlayer(player *Player, direction string, deltatime float32
 		player.UpdatePosition(nextPosition)
 		fmt.Println("New Player position: ", player.Position)
 		fmt.Println("New Player hitbox: ", player.HitBox)
+		game.HandleCollisionWithWithPowerUp(player, nextHitbox)
 
 	}
 }
@@ -158,6 +166,20 @@ func (game *Game) ExplodeBomb(bomb_index int) {
 	game.GenerateShrapnel(&game.Bombs[bomb_index])
 	game.Bombs[bomb_index].Owner.AvailableBombs++
 	game.Bombs = append(game.Bombs[:bomb_index], game.Bombs[bomb_index+1:]...)
+}
+
+func (game *Game) PlacePowerUp(position_x, position_y int32) {
+	powerup := NewPowerUp(position_x, position_y, Speed)
+	game.PowerUps = append(game.PowerUps, powerup)
+}
+func (game *Game) PlacePowerUpRandom(position_x, position_y int32) {
+	if rand.Float32() < globals.POWERUP_CHANCE {
+		game.PlacePowerUp(position_x, position_y)
+	}
+}
+
+func (game *Game) RemovePowerUp(pu_index int) {
+	game.PowerUps = append(game.PowerUps[:pu_index], game.PowerUps[pu_index+1:]...)
 }
 
 func (game *Game) GenerateShrapnel(sourceBomb *Bomb) {
@@ -190,6 +212,7 @@ func (game *Game) GenerateShrapnel(sourceBomb *Bomb) {
 				up_blocked = true
 			} else {
 				game.PlaceShrapnelDestructive(sourceBomb.Owner, sourceBomb.Position_x, int32(nextpos_y_up))
+				game.PlacePowerUpRandom(vecPosition.X, vecPosition.Y)
 			}
 		}
 		if !down_blocked {
@@ -199,6 +222,8 @@ func (game *Game) GenerateShrapnel(sourceBomb *Bomb) {
 				down_blocked = true
 			} else {
 				game.PlaceShrapnelDestructive(sourceBomb.Owner, sourceBomb.Position_x, int32(nextpos_y_down))
+				game.PlacePowerUpRandom(vecPosition.X, vecPosition.Y)
+
 			}
 		}
 		if !left_blocked {
@@ -208,6 +233,7 @@ func (game *Game) GenerateShrapnel(sourceBomb *Bomb) {
 				left_blocked = true
 			} else {
 				game.PlaceShrapnelDestructive(sourceBomb.Owner, int32(nextpos_x_left), sourceBomb.Position_y)
+				game.PlacePowerUpRandom(vecPosition.X, vecPosition.Y)
 			}
 		}
 		if !right_blocked {
@@ -218,6 +244,7 @@ func (game *Game) GenerateShrapnel(sourceBomb *Bomb) {
 				right_blocked = true
 			} else {
 				game.PlaceShrapnelDestructive(sourceBomb.Owner, int32(nextpos_x_right), sourceBomb.Position_y)
+				game.PlacePowerUpRandom(vecPosition.X, vecPosition.Y)
 			}
 		}
 		fmt.Printf("Check for obstacles: \n\tup_blocked: %v\n\tdown_blocked: %v\n\tright_blocked: %v\n\tleft_blocked: %v\n", up_blocked, down_blocked, right_blocked, left_blocked)
