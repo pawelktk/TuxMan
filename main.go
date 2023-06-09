@@ -50,7 +50,7 @@ func main() {
 					currentGame.AddPlayer("PLAYER2", globals.GLOBAL_TILE_SIZE*float32(currentGame.GameBoard.Size_x-1), 1)
 				}
 				if screens.SelectedPlayerCount > 2 {
-					currentGame.AddPlayer("PLAYER3", 1, globals.GLOBAL_TILE_SIZE*float32(currentGame.GameBoard.Size_x-1))
+					currentGame.AddPlayer("PLAYER3", 1, globals.GLOBAL_TILE_SIZE*float32(currentGame.GameBoard.Size_y-1))
 				}
 
 				screen = "game_init"
