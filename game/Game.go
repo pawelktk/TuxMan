@@ -212,7 +212,9 @@ func (game *Game) GenerateShrapnel(sourceBomb *Bomb) {
 				up_blocked = true
 			} else {
 				game.PlaceShrapnelDestructive(sourceBomb.Owner, sourceBomb.Position_x, int32(nextpos_y_up))
-				game.PlacePowerUpRandom(vecPosition.X, vecPosition.Y)
+				if obstacleType == Breakable {
+					game.PlacePowerUpRandom(vecPosition.X, vecPosition.Y)
+				}
 			}
 		}
 		if !down_blocked {
@@ -222,8 +224,9 @@ func (game *Game) GenerateShrapnel(sourceBomb *Bomb) {
 				down_blocked = true
 			} else {
 				game.PlaceShrapnelDestructive(sourceBomb.Owner, sourceBomb.Position_x, int32(nextpos_y_down))
-				game.PlacePowerUpRandom(vecPosition.X, vecPosition.Y)
-
+				if obstacleType == Breakable {
+					game.PlacePowerUpRandom(vecPosition.X, vecPosition.Y)
+				}
 			}
 		}
 		if !left_blocked {
@@ -233,7 +236,9 @@ func (game *Game) GenerateShrapnel(sourceBomb *Bomb) {
 				left_blocked = true
 			} else {
 				game.PlaceShrapnelDestructive(sourceBomb.Owner, int32(nextpos_x_left), sourceBomb.Position_y)
-				game.PlacePowerUpRandom(vecPosition.X, vecPosition.Y)
+				if obstacleType == Breakable {
+					game.PlacePowerUpRandom(vecPosition.X, vecPosition.Y)
+				}
 			}
 		}
 		if !right_blocked {
@@ -244,7 +249,9 @@ func (game *Game) GenerateShrapnel(sourceBomb *Bomb) {
 				right_blocked = true
 			} else {
 				game.PlaceShrapnelDestructive(sourceBomb.Owner, int32(nextpos_x_right), sourceBomb.Position_y)
-				game.PlacePowerUpRandom(vecPosition.X, vecPosition.Y)
+				if obstacleType == Breakable {
+					game.PlacePowerUpRandom(vecPosition.X, vecPosition.Y)
+				}
 			}
 		}
 		fmt.Printf("Check for obstacles: \n\tup_blocked: %v\n\tdown_blocked: %v\n\tright_blocked: %v\n\tleft_blocked: %v\n", up_blocked, down_blocked, right_blocked, left_blocked)
